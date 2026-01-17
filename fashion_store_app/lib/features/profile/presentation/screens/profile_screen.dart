@@ -1,0 +1,192 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../../../config/theme/app_colors.dart';
+import '../../../../config/theme/app_text_styles.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
+
+/// Pantalla de perfil del usuario
+class ProfileScreen extends ConsumerWidget {
+  const ProfileScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final userAsync = ref.watch(currentUserProvider);
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('MI CUENTA'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings_outlined),
+            onPressed: () {},
+          ),
+        ],
+      ),
+      body: userAsync.when(
+        data: (user) {
+          if (user == null) {
+            return _NotLoggedInState();
+          }
+          return _ProfileContent(user: user);
+        },
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (_, __) => _NotLoggedInState(),
+      ),
+    );
+  }
+}
+
+class _NotLoggedInState extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.person_outline,
+              size: 80,
+              color: AppColors.textSecondary,
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'Inicia sesión para ver tu perfil',
+              style: AppTextStyles.h4,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Accede a tus pedidos, favoritos y más',
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: AppColors.textSecondary,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 32),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => context.push('/auth/login'),
+                child: const Text('INICIAR SESIÓN'),
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton(
+                onPressed: () => context.push('/auth/register'),
+                child: const Text('CREAR CUENTA'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ProfileContent extends ConsumerWidget {
+  final dynamic user;
+
+  const _ProfileContent({required this.user});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          // Avatar y nombre
+          CircleAvatar(
+            radius: 50,
+            backgroundColor: AppColors.primary,
+            child: Text(
+              user.initials ?? user.email[0].toUpperCase(),
+              style: AppTextStyles.h2.copyWith(color: Colors.white),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(user.displayName ?? user.email, style: AppTextStyles.h4),
+          Text(
+            user.email,
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: AppColors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 32),
+
+          // Opciones del menú
+          _MenuItem(
+            icon: Icons.shopping_bag_outlined,
+            title: 'Mis Pedidos',
+            subtitle: 'Ver historial de compras',
+            onTap: () => context.push('/orders'),
+          ),
+          _MenuItem(
+            icon: Icons.favorite_outline,
+            title: 'Favoritos',
+            subtitle: 'Productos guardados',
+            onTap: () => context.push('/favorites'),
+          ),
+          _MenuItem(
+            icon: Icons.location_on_outlined,
+            title: 'Direcciones',
+            subtitle: 'Gestionar direcciones de envío',
+            onTap: () {},
+          ),
+          _MenuItem(
+            icon: Icons.credit_card_outlined,
+            title: 'Métodos de Pago',
+            subtitle: 'Gestionar tarjetas',
+            onTap: () {},
+          ),
+          const SizedBox(height: 24),
+
+          // Cerrar sesión
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton(
+              onPressed: () async {
+                await ref.read(authActionsProvider.notifier).signOut();
+                if (context.mounted) {
+                  context.go('/');
+                }
+              },
+              style: OutlinedButton.styleFrom(foregroundColor: AppColors.error),
+              child: const Text('CERRAR SESIÓN'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MenuItem extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  const _MenuItem({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: Icon(icon, color: AppColors.primary),
+      title: Text(title, style: AppTextStyles.labelLarge),
+      subtitle: Text(subtitle, style: AppTextStyles.bodySmall),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: onTap,
+    );
+  }
+}
