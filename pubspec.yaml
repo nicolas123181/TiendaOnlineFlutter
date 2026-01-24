@@ -1,0 +1,105 @@
+name: vantage_fashion_app
+description: "VANTAGE - Premium Men's Fashion E-commerce App"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.6.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  
+  # Backend & Database
+  supabase_flutter: ^2.8.0
+  
+  # Pagos
+  flutter_stripe: ^11.0.0
+  
+  # State Management
+  flutter_riverpod: ^2.6.1
+  riverpod_annotation: ^2.6.1
+  
+  # UI & Design
+  google_fonts: ^6.2.1
+  flutter_svg: ^2.0.10
+  cached_network_image: ^3.4.1
+  shimmer: ^3.0.0
+  lottie: ^3.1.3
+  smooth_page_indicator: ^1.2.0+3
+  
+  # Navigation
+  go_router: ^14.6.2
+  
+  # Forms & Validation
+  flutter_form_builder: ^10.1.0
+  form_builder_validators: ^11.0.0
+  
+  # Storage
+  shared_preferences: ^2.3.3
+  flutter_secure_storage: ^9.2.2
+  
+  # HTTP & Networking
+  http: ^1.2.2
+  dio: ^5.7.0
+  
+  # PDF Generation & Preview
+  pdf: ^3.11.1
+  printing: ^5.13.3
+  path_provider: ^2.1.5
+  
+  # Image Handling
+  image_picker: ^1.1.2
+  
+  # QR & Barcodes
+  qr_flutter: ^4.1.0
+  mobile_scanner: ^6.0.2
+  
+  # Email & Communication
+  url_launcher: ^6.3.1
+  share_plus: ^10.1.3
+  
+  # Notifications
+  flutter_local_notifications: ^18.0.1
+  permission_handler: ^11.3.1
+  timezone: ^0.10.0
+  
+  # Utilities
+  intl: ^0.20.1
+  uuid: ^4.5.1
+  collection: ^1.19.0
+  equatable: ^2.0.7
+  
+  # Immutable Models (Freezed)
+  freezed_annotation: ^2.4.4
+  json_annotation: ^4.9.0
+  
+  # Search & Filtering
+  flutter_typeahead: ^5.2.0
+  
+  # Animations
+  animate_do: ^3.3.4
+  flutter_animate: ^4.5.2
+
+  # Environment variables
+  flutter_dotenv: ^5.2.1
+
+  # Icons
+  cupertino_icons: ^1.0.8
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  riverpod_generator: ^2.6.3
+  build_runner: ^2.4.13
+  json_serializable: ^6.8.0
+  freezed: ^2.5.7
+
+flutter:
+  uses-material-design: true
+  
+  assets:
+    - assets/images/
+    - assets/icons/
+    - .env

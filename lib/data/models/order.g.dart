@@ -1,0 +1,29 @@
+// GENERATED CODE - DO NOT MODIFY BY HAND
+
+part of 'order.dart';
+
+// **************************************************************************
+// JsonSerializableGenerator
+// **************************************************************************
+
+_$OrderItemImpl _$$OrderItemImplFromJson(Map<String, dynamic> json) =>
+    _$OrderItemImpl(
+      id: (json['id'] as num).toInt(),
+      orderId: (json['order_id'] as num).toInt(),
+      productId: (json['product_id'] as num?)?.toInt(),
+      productName: json['product_name'] as String,
+      productPrice: (json['product_price'] as num).toInt(),
+      quantity: (json['quantity'] as num).toInt(),
+      size: json['size'] as String?,
+    );
+
+Map<String, dynamic> _$$OrderItemImplToJson(_$OrderItemImpl instance) =>
+    <String, dynamic>{
+      'id': instance.id,
+      'order_id': instance.orderId,
+      'product_id': instance.productId,
+      'product_name': instance.productName,
+      'product_price': instance.productPrice,
+      'quantity': instance.quantity,
+      'size': instance.size,
+    };
