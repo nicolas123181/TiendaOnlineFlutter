@@ -1,0 +1,1 @@
+ C:\\Users\\prats\\OneDrive\\Escritorio\\Proyecto\\Flutter\ tienda\\vantage_fashion_app\\.dart_tool\\flutter_build\\e3f910f4dc82f0592eb04a7b873cf70b\\native_assets.json: 
