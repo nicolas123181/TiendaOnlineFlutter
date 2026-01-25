@@ -1,7 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../shared/services/supabase_service.dart' hide currentUserProvider;
-import '../../../auth/presentation/providers/auth_provider.dart' show currentUserProvider;
+import '../../../../shared/services/supabase_service.dart'
+    hide currentUserProvider;
+import '../../../auth/presentation/providers/auth_provider.dart'
+    show currentUserProvider;
 
 /// Modelo de pedido del usuario
 class UserOrder {
@@ -34,7 +36,7 @@ class UserOrder {
   factory UserOrder.fromJson(Map<String, dynamic> json) {
     final itemsList = json['order_items'] as List? ?? [];
     final carrierData = json['shipping_carriers'];
-    
+
     return UserOrder(
       id: json['id'] as int,
       status: json['status'] as String? ?? 'pending',
@@ -44,23 +46,32 @@ class UserOrder {
       shippingCost: json['shipping_cost'] as int?,
       trackingNumber: json['tracking_number'] as String?,
       createdAt: DateTime.parse(json['created_at'] as String),
-      updatedAt: json['updated_at'] != null 
-          ? DateTime.parse(json['updated_at'] as String) 
+      updatedAt: json['updated_at'] != null
+          ? DateTime.parse(json['updated_at'] as String)
           : null,
       items: itemsList.map((item) => OrderItem.fromJson(item)).toList(),
-      carrier: carrierData != null ? ShippingCarrier.fromJson(carrierData) : null,
+      carrier: carrierData != null
+          ? ShippingCarrier.fromJson(carrierData)
+          : null,
     );
   }
 
   String get statusLabel {
     switch (status) {
-      case 'pending': return 'Pendiente';
-      case 'paid': return 'Pagado';
-      case 'ready_for_pickup': return 'Preparando';
-      case 'shipped': return 'Enviado';
-      case 'delivered': return 'Entregado';
-      case 'cancelled': return 'Cancelado';
-      default: return status;
+      case 'pending':
+        return 'Pendiente';
+      case 'paid':
+        return 'Pagado';
+      case 'ready_for_pickup':
+        return 'Preparando';
+      case 'shipped':
+        return 'Enviado';
+      case 'delivered':
+        return 'Entregado';
+      case 'cancelled':
+        return 'Cancelado';
+      default:
+        return status;
     }
   }
 
@@ -96,7 +107,8 @@ class OrderItem {
   }
 
   String get formattedPrice => '${(productPrice / 100).toStringAsFixed(2)} €';
-  String get formattedTotal => '${((productPrice * quantity) / 100).toStringAsFixed(2)} €';
+  String get formattedTotal =>
+      '${((productPrice * quantity) / 100).toStringAsFixed(2)} €';
 }
 
 class ShippingCarrier {
@@ -131,9 +143,9 @@ class ShippingCarrier {
 final userOrdersProvider = FutureProvider<List<UserOrder>>((ref) async {
   final user = ref.watch(currentUserProvider).value;
   if (user == null) return [];
-  
+
   final supabase = ref.watch(supabaseClientProvider);
-  
+
   final response = await supabase
       .from('orders')
       .select('''
@@ -163,14 +175,15 @@ final userOrdersProvider = FutureProvider<List<UserOrder>>((ref) async {
       ''')
       .eq('customer_email', user.email!)
       .order('created_at', ascending: false);
-  
-  return (response as List)
-      .map((json) => UserOrder.fromJson(json))
-      .toList();
+
+  return (response as List).map((json) => UserOrder.fromJson(json)).toList();
 });
 
 /// Provider para un pedido específico
-final orderByIdProvider = FutureProvider.family<UserOrder?, int>((ref, orderId) async {
+final orderByIdProvider = FutureProvider.family<UserOrder?, int>((
+  ref,
+  orderId,
+) async {
   final orders = await ref.watch(userOrdersProvider.future);
   return orders.where((o) => o.id == orderId).firstOrNull;
 });

@@ -39,7 +39,8 @@ class HomeScreen extends ConsumerWidget {
                   final isDark = ref.watch(themeModeProvider) == ThemeMode.dark;
                   return IconButton(
                     icon: Icon(isDark ? Icons.light_mode : Icons.dark_mode),
-                    onPressed: () => ref.read(themeModeProvider.notifier).toggleTheme(),
+                    onPressed: () =>
+                        ref.read(themeModeProvider.notifier).toggleTheme(),
                     tooltip: isDark ? 'Modo claro' : 'Modo oscuro',
                   );
                 },

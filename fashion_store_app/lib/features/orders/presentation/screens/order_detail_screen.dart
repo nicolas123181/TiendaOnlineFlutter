@@ -34,7 +34,10 @@ class OrderDetailScreen extends ConsumerWidget {
             children: [
               Icon(Icons.error_outline, size: 48, color: AppColors.error),
               const SizedBox(height: 16),
-              Text('Error al cargar el pedido', style: AppTextStyles.bodyMedium),
+              Text(
+                'Error al cargar el pedido',
+                style: AppTextStyles.bodyMedium,
+              ),
               const SizedBox(height: 8),
               ElevatedButton(
                 onPressed: () => ref.invalidate(orderByIdProvider(orderId)),
@@ -55,11 +58,16 @@ class _OrderDetailContent extends StatelessWidget {
 
   Color _getStatusColor() {
     switch (order.status) {
-      case 'delivered': return AppColors.success;
-      case 'shipped': return AppColors.info;
-      case 'cancelled': return AppColors.error;
-      case 'pending': return AppColors.warning;
-      default: return AppColors.primary;
+      case 'delivered':
+        return AppColors.success;
+      case 'shipped':
+        return AppColors.info;
+      case 'cancelled':
+        return AppColors.error;
+      case 'pending':
+        return AppColors.warning;
+      default:
+        return AppColors.primary;
     }
   }
 
@@ -73,15 +81,15 @@ class _OrderDetailContent extends StatelessWidget {
           // Estado del pedido
           _StatusCard(order: order, statusColor: _getStatusColor()),
           const SizedBox(height: 16),
-          
+
           // Tracking (si hay)
           if (order.trackingNumber != null && order.status == 'shipped')
             _TrackingCard(order: order),
-          
+
           // Productos
           _ProductsCard(items: order.items),
           const SizedBox(height: 16),
-          
+
           // Resumen del pedido
           _SummaryCard(order: order),
         ],
@@ -114,7 +122,10 @@ class _StatusCard extends StatelessWidget {
               children: [
                 Text('Estado del pedido', style: AppTextStyles.labelLarge),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: statusColor.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(20),
@@ -130,18 +141,24 @@ class _StatusCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 16),
-            
+
             // Timeline de estados
             _StatusTimeline(status: order.status),
-            
+
             const SizedBox(height: 16),
             Row(
               children: [
-                Icon(Icons.calendar_today, size: 16, color: AppColors.textSecondary),
+                Icon(
+                  Icons.calendar_today,
+                  size: 16,
+                  color: AppColors.textSecondary,
+                ),
                 const SizedBox(width: 8),
                 Text(
                   'Realizado el ${DateFormat('dd MMMM yyyy, HH:mm', 'es_ES').format(order.createdAt)}',
-                  style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
                 ),
               ],
             ),
@@ -159,10 +176,16 @@ class _StatusTimeline extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final statuses = ['pending', 'paid', 'ready_for_pickup', 'shipped', 'delivered'];
+    final statuses = [
+      'pending',
+      'paid',
+      'ready_for_pickup',
+      'shipped',
+      'delivered',
+    ];
     final currentIndex = statuses.indexOf(status);
     final isCancelled = status == 'cancelled';
-    
+
     return Row(
       children: [
         for (int i = 0; i < statuses.length; i++) ...[
@@ -207,14 +230,14 @@ class _TimelineStep extends StatelessWidget {
         color: isCancelled
             ? AppColors.error
             : isCompleted
-                ? AppColors.success
-                : AppColors.surface,
+            ? AppColors.success
+            : AppColors.surface,
         border: Border.all(
           color: isCancelled
               ? AppColors.error
               : isCompleted
-                  ? AppColors.success
-                  : AppColors.border,
+              ? AppColors.success
+              : AppColors.border,
           width: 2,
         ),
       ),
@@ -253,7 +276,10 @@ class _TrackingCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Número de seguimiento', style: AppTextStyles.labelMedium),
+                      Text(
+                        'Número de seguimiento',
+                        style: AppTextStyles.labelMedium,
+                      ),
                       const SizedBox(height: 4),
                       Text(
                         order.trackingNumber!,
@@ -274,7 +300,9 @@ class _TrackingCard extends StatelessWidget {
                 IconButton(
                   icon: const Icon(Icons.copy),
                   onPressed: () {
-                    Clipboard.setData(ClipboardData(text: order.trackingNumber!));
+                    Clipboard.setData(
+                      ClipboardData(text: order.trackingNumber!),
+                    );
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Número copiado')),
                     );
@@ -282,13 +310,16 @@ class _TrackingCard extends StatelessWidget {
                 ),
               ],
             ),
-            if (order.carrier?.getTrackingUrl(order.trackingNumber) != null) ...[
+            if (order.carrier?.getTrackingUrl(order.trackingNumber) !=
+                null) ...[
               const SizedBox(height: 12),
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton.icon(
                   onPressed: () async {
-                    final url = order.carrier!.getTrackingUrl(order.trackingNumber)!;
+                    final url = order.carrier!.getTrackingUrl(
+                      order.trackingNumber,
+                    )!;
                     if (await canLaunchUrl(Uri.parse(url))) {
                       await launchUrl(Uri.parse(url));
                     }
@@ -323,52 +354,60 @@ class _ProductsCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Productos (${items.length})', style: AppTextStyles.labelLarge),
+            Text(
+              'Productos (${items.length})',
+              style: AppTextStyles.labelLarge,
+            ),
             const SizedBox(height: 16),
-            ...items.map((item) => Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: Row(
-                children: [
-                  Container(
-                    width: 50,
-                    height: 50,
-                    decoration: BoxDecoration(
-                      color: AppColors.backgroundSecondary,
-                      borderRadius: BorderRadius.circular(8),
+            ...items.map(
+              (item) => Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 50,
+                      height: 50,
+                      decoration: BoxDecoration(
+                        color: AppColors.backgroundSecondary,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(
+                        Icons.shopping_bag_outlined,
+                        color: AppColors.textSecondary,
+                      ),
                     ),
-                    child: const Icon(Icons.shopping_bag_outlined, color: AppColors.textSecondary),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          item.productName,
-                          style: AppTextStyles.labelMedium,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        if (item.size != null)
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
                           Text(
-                            'Talla: ${item.size}',
+                            item.productName,
+                            style: AppTextStyles.labelMedium,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          if (item.size != null)
+                            Text(
+                              'Talla: ${item.size}',
+                              style: AppTextStyles.caption.copyWith(
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          Text(
+                            'Cant: ${item.quantity} × ${item.formattedPrice}',
                             style: AppTextStyles.caption.copyWith(
                               color: AppColors.textSecondary,
                             ),
                           ),
-                        Text(
-                          'Cant: ${item.quantity} × ${item.formattedPrice}',
-                          style: AppTextStyles.caption.copyWith(
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                  Text(item.formattedTotal, style: AppTextStyles.labelMedium),
-                ],
+                    Text(item.formattedTotal, style: AppTextStyles.labelMedium),
+                  ],
+                ),
               ),
-            )),
+            ),
           ],
         ),
       ),
@@ -456,8 +495,8 @@ class _SummaryRow extends StatelessWidget {
             style: isBold
                 ? AppTextStyles.price
                 : isDiscount
-                    ? AppTextStyles.bodyMedium.copyWith(color: AppColors.success)
-                    : AppTextStyles.bodyMedium,
+                ? AppTextStyles.bodyMedium.copyWith(color: AppColors.success)
+                : AppTextStyles.bodyMedium,
           ),
         ],
       ),

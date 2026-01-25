@@ -64,23 +64,35 @@ class _OrderCard extends StatelessWidget {
 
   Color _getStatusColor() {
     switch (order.status) {
-      case 'delivered': return AppColors.success;
-      case 'shipped': return AppColors.info;
-      case 'cancelled': return AppColors.error;
-      case 'pending': return AppColors.warning;
-      default: return AppColors.primary;
+      case 'delivered':
+        return AppColors.success;
+      case 'shipped':
+        return AppColors.info;
+      case 'cancelled':
+        return AppColors.error;
+      case 'pending':
+        return AppColors.warning;
+      default:
+        return AppColors.primary;
     }
   }
 
   IconData _getStatusIcon() {
     switch (order.status) {
-      case 'delivered': return Icons.check_circle;
-      case 'shipped': return Icons.local_shipping;
-      case 'cancelled': return Icons.cancel;
-      case 'pending': return Icons.hourglass_empty;
-      case 'paid': return Icons.payment;
-      case 'ready_for_pickup': return Icons.inventory;
-      default: return Icons.shopping_bag;
+      case 'delivered':
+        return Icons.check_circle;
+      case 'shipped':
+        return Icons.local_shipping;
+      case 'cancelled':
+        return Icons.cancel;
+      case 'pending':
+        return Icons.hourglass_empty;
+      case 'paid':
+        return Icons.payment;
+      case 'ready_for_pickup':
+        return Icons.inventory;
+      default:
+        return Icons.shopping_bag;
     }
   }
 
@@ -104,12 +116,12 @@ class _OrderCard extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    'Pedido #${order.id}',
-                    style: AppTextStyles.labelLarge,
-                  ),
+                  Text('Pedido #${order.id}', style: AppTextStyles.labelLarge),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: _getStatusColor().withOpacity(0.1),
                       borderRadius: BorderRadius.circular(20),
@@ -117,7 +129,11 @@ class _OrderCard extends StatelessWidget {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(_getStatusIcon(), size: 14, color: _getStatusColor()),
+                        Icon(
+                          _getStatusIcon(),
+                          size: 14,
+                          color: _getStatusColor(),
+                        ),
                         const SizedBox(width: 4),
                         Text(
                           order.statusLabel,
@@ -132,14 +148,21 @@ class _OrderCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 12),
-              
+
               // Fecha
               Row(
                 children: [
-                  Icon(Icons.calendar_today, size: 14, color: AppColors.textSecondary),
+                  Icon(
+                    Icons.calendar_today,
+                    size: 14,
+                    color: AppColors.textSecondary,
+                  ),
                   const SizedBox(width: 6),
                   Text(
-                    DateFormat('dd MMM yyyy, HH:mm', 'es_ES').format(order.createdAt),
+                    DateFormat(
+                      'dd MMM yyyy, HH:mm',
+                      'es_ES',
+                    ).format(order.createdAt),
                     style: AppTextStyles.bodySmall.copyWith(
                       color: AppColors.textSecondary,
                     ),
@@ -147,7 +170,7 @@ class _OrderCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 8),
-              
+
               // Items preview
               if (order.items.isNotEmpty) ...[
                 Text(
@@ -162,10 +185,10 @@ class _OrderCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
               ],
-              
+
               const Divider(),
               const SizedBox(height: 8),
-              
+
               // Total
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -177,9 +200,10 @@ class _OrderCard extends StatelessWidget {
                   ),
                 ],
               ),
-              
+
               // Tracking
-              if (order.trackingNumber != null && order.status == 'shipped') ...[
+              if (order.trackingNumber != null &&
+                  order.status == 'shipped') ...[
                 const SizedBox(height: 8),
                 Container(
                   padding: const EdgeInsets.all(8),
@@ -189,15 +213,25 @@ class _OrderCard extends StatelessWidget {
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.local_shipping, size: 16, color: AppColors.info),
+                      Icon(
+                        Icons.local_shipping,
+                        size: 16,
+                        color: AppColors.info,
+                      ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           'Seguimiento: ${order.trackingNumber}',
-                          style: AppTextStyles.caption.copyWith(color: AppColors.info),
+                          style: AppTextStyles.caption.copyWith(
+                            color: AppColors.info,
+                          ),
                         ),
                       ),
-                      Icon(Icons.arrow_forward_ios, size: 12, color: AppColors.info),
+                      Icon(
+                        Icons.arrow_forward_ios,
+                        size: 12,
+                        color: AppColors.info,
+                      ),
                     ],
                   ),
                 ),

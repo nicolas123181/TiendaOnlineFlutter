@@ -356,7 +356,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
         ],
       ),
-      
+
       // Direcciones del usuario
       GoRoute(
         path: '/addresses',

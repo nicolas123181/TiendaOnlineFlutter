@@ -1,7 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../shared/services/supabase_service.dart' hide currentUserProvider;
-import '../../../auth/presentation/providers/auth_provider.dart' show currentUserProvider;
+import '../../../../shared/services/supabase_service.dart'
+    hide currentUserProvider;
+import '../../../auth/presentation/providers/auth_provider.dart'
+    show currentUserProvider;
 
 /// Modelo de dirección de envío
 class ShippingAddress {
@@ -40,7 +42,7 @@ class ShippingAddress {
       phone: json['phone'] as String? ?? '',
       isDefault: json['is_default'] as bool? ?? false,
       createdAt: DateTime.parse(json['created_at'] as String),
-      updatedAt: json['updated_at'] != null 
+      updatedAt: json['updated_at'] != null
           ? DateTime.parse(json['updated_at'] as String)
           : null,
     );
@@ -88,19 +90,21 @@ class ShippingAddress {
 }
 
 /// Provider para las direcciones del usuario
-final userAddressesProvider = FutureProvider<List<ShippingAddress>>((ref) async {
+final userAddressesProvider = FutureProvider<List<ShippingAddress>>((
+  ref,
+) async {
   final user = ref.watch(currentUserProvider).value;
   if (user == null) return [];
-  
+
   final supabase = ref.watch(supabaseClientProvider);
-  
+
   final response = await supabase
       .from('user_shipping_addresses')
       .select()
       .eq('user_id', user.id)
       .order('is_default', ascending: false)
       .order('created_at', ascending: false);
-  
+
   return (response as List)
       .map((json) => ShippingAddress.fromJson(json))
       .toList();
@@ -109,7 +113,8 @@ final userAddressesProvider = FutureProvider<List<ShippingAddress>>((ref) async 
 /// Provider para la dirección por defecto
 final defaultAddressProvider = FutureProvider<ShippingAddress?>((ref) async {
   final addresses = await ref.watch(userAddressesProvider.future);
-  return addresses.where((a) => a.isDefault).firstOrNull ?? addresses.firstOrNull;
+  return addresses.where((a) => a.isDefault).firstOrNull ??
+      addresses.firstOrNull;
 });
 
 /// Notifier para gestionar direcciones
@@ -126,15 +131,15 @@ class AddressesNotifier extends Notifier<AddressesActionState> {
     bool isDefault = false,
   }) async {
     state = state.copyWith(isLoading: true, error: null);
-    
+
     final user = ref.read(currentUserProvider).value;
     if (user == null) {
       state = state.copyWith(isLoading: false, error: 'Usuario no autenticado');
       return;
     }
-    
+
     final supabase = ref.read(supabaseClientProvider);
-    
+
     try {
       // Si es default, quitar default de las demás
       if (isDefault) {
@@ -143,7 +148,7 @@ class AddressesNotifier extends Notifier<AddressesActionState> {
             .update({'is_default': false})
             .eq('user_id', user.id);
       }
-      
+
       await supabase.from('user_shipping_addresses').insert({
         'user_id': user.id,
         'full_name': fullName,
@@ -153,11 +158,17 @@ class AddressesNotifier extends Notifier<AddressesActionState> {
         'phone': phone,
         'is_default': isDefault,
       });
-      
+
       ref.invalidate(userAddressesProvider);
-      state = state.copyWith(isLoading: false, successMessage: 'Dirección añadida');
+      state = state.copyWith(
+        isLoading: false,
+        successMessage: 'Dirección añadida',
+      );
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: 'Error al añadir dirección: $e');
+      state = state.copyWith(
+        isLoading: false,
+        error: 'Error al añadir dirección: $e',
+      );
     }
   }
 
@@ -171,15 +182,15 @@ class AddressesNotifier extends Notifier<AddressesActionState> {
     bool? isDefault,
   }) async {
     state = state.copyWith(isLoading: true, error: null);
-    
+
     final user = ref.read(currentUserProvider).value;
     if (user == null) {
       state = state.copyWith(isLoading: false, error: 'Usuario no autenticado');
       return;
     }
-    
+
     final supabase = ref.read(supabaseClientProvider);
-    
+
     try {
       // Si es default, quitar default de las demás
       if (isDefault == true) {
@@ -188,7 +199,7 @@ class AddressesNotifier extends Notifier<AddressesActionState> {
             .update({'is_default': false})
             .eq('user_id', user.id);
       }
-      
+
       final updates = <String, dynamic>{};
       if (fullName != null) updates['full_name'] = fullName;
       if (address != null) updates['address'] = address;
@@ -197,68 +208,83 @@ class AddressesNotifier extends Notifier<AddressesActionState> {
       if (phone != null) updates['phone'] = phone;
       if (isDefault != null) updates['is_default'] = isDefault;
       updates['updated_at'] = DateTime.now().toIso8601String();
-      
+
       await supabase
           .from('user_shipping_addresses')
           .update(updates)
           .eq('id', id);
-      
+
       ref.invalidate(userAddressesProvider);
-      state = state.copyWith(isLoading: false, successMessage: 'Dirección actualizada');
+      state = state.copyWith(
+        isLoading: false,
+        successMessage: 'Dirección actualizada',
+      );
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: 'Error al actualizar dirección: $e');
+      state = state.copyWith(
+        isLoading: false,
+        error: 'Error al actualizar dirección: $e',
+      );
     }
   }
 
   Future<void> deleteAddress(int id) async {
     state = state.copyWith(isLoading: true, error: null);
-    
+
     final supabase = ref.read(supabaseClientProvider);
-    
+
     try {
-      await supabase
-          .from('user_shipping_addresses')
-          .delete()
-          .eq('id', id);
-      
+      await supabase.from('user_shipping_addresses').delete().eq('id', id);
+
       ref.invalidate(userAddressesProvider);
-      state = state.copyWith(isLoading: false, successMessage: 'Dirección eliminada');
+      state = state.copyWith(
+        isLoading: false,
+        successMessage: 'Dirección eliminada',
+      );
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: 'Error al eliminar dirección: $e');
+      state = state.copyWith(
+        isLoading: false,
+        error: 'Error al eliminar dirección: $e',
+      );
     }
   }
 
   Future<void> setAsDefault(int id) async {
     state = state.copyWith(isLoading: true, error: null);
-    
+
     final user = ref.read(currentUserProvider).value;
     if (user == null) {
       state = state.copyWith(isLoading: false, error: 'Usuario no autenticado');
       return;
     }
-    
+
     final supabase = ref.read(supabaseClientProvider);
-    
+
     try {
       // Quitar default de todas
       await supabase
           .from('user_shipping_addresses')
           .update({'is_default': false})
           .eq('user_id', user.id);
-      
+
       // Poner default a la seleccionada
       await supabase
           .from('user_shipping_addresses')
           .update({'is_default': true})
           .eq('id', id);
-      
+
       ref.invalidate(userAddressesProvider);
-      state = state.copyWith(isLoading: false, successMessage: 'Dirección predeterminada actualizada');
+      state = state.copyWith(
+        isLoading: false,
+        successMessage: 'Dirección predeterminada actualizada',
+      );
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: 'Error al establecer dirección predeterminada: $e');
+      state = state.copyWith(
+        isLoading: false,
+        error: 'Error al establecer dirección predeterminada: $e',
+      );
     }
   }
-  
+
   void clearMessages() {
     state = state.copyWith(error: null, successMessage: null);
   }
@@ -269,13 +295,13 @@ class AddressesActionState {
   final bool isLoading;
   final String? error;
   final String? successMessage;
-  
+
   const AddressesActionState({
     this.isLoading = false,
     this.error,
     this.successMessage,
   });
-  
+
   AddressesActionState copyWith({
     bool? isLoading,
     String? error,
@@ -289,6 +315,7 @@ class AddressesActionState {
   }
 }
 
-final addressesNotifierProvider = NotifierProvider<AddressesNotifier, AddressesActionState>(() {
-  return AddressesNotifier();
-});
+final addressesNotifierProvider =
+    NotifierProvider<AddressesNotifier, AddressesActionState>(() {
+      return AddressesNotifier();
+    });

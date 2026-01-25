@@ -27,7 +27,11 @@ class AddressesScreen extends ConsumerWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.location_off, size: 64, color: AppColors.textSecondary),
+                  Icon(
+                    Icons.location_off,
+                    size: 64,
+                    color: AppColors.textSecondary,
+                  ),
                   const SizedBox(height: 16),
                   Text(
                     'No tienes direcciones guardadas',
@@ -56,7 +60,8 @@ class AddressesScreen extends ConsumerWidget {
                 final address = addresses[index];
                 return _AddressCard(
                   address: address,
-                  onEdit: () => _showAddressForm(context, ref, address: address),
+                  onEdit: () =>
+                      _showAddressForm(context, ref, address: address),
                   onDelete: () => _confirmDelete(context, ref, address),
                   onSetDefault: () => ref
                       .read(addressesNotifierProvider.notifier)
@@ -73,7 +78,10 @@ class AddressesScreen extends ConsumerWidget {
             children: [
               Icon(Icons.error_outline, size: 48, color: AppColors.error),
               const SizedBox(height: 16),
-              Text('Error al cargar direcciones', style: AppTextStyles.bodyMedium),
+              Text(
+                'Error al cargar direcciones',
+                style: AppTextStyles.bodyMedium,
+              ),
               const SizedBox(height: 8),
               ElevatedButton(
                 onPressed: () => ref.invalidate(userAddressesProvider),
@@ -86,7 +94,11 @@ class AddressesScreen extends ConsumerWidget {
     );
   }
 
-  void _showAddressForm(BuildContext context, WidgetRef ref, {ShippingAddress? address}) {
+  void _showAddressForm(
+    BuildContext context,
+    WidgetRef ref, {
+    ShippingAddress? address,
+  }) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -95,24 +107,28 @@ class AddressesScreen extends ConsumerWidget {
         address: address,
         onSave: (data) async {
           if (address != null) {
-            await ref.read(addressesNotifierProvider.notifier).updateAddress(
-              id: address.id,
-              fullName: data['fullName'],
-              address: data['address'],
-              postalCode: data['postalCode'],
-              city: data['city'],
-              phone: data['phone'],
-              isDefault: data['isDefault'],
-            );
+            await ref
+                .read(addressesNotifierProvider.notifier)
+                .updateAddress(
+                  id: address.id,
+                  fullName: data['fullName'],
+                  address: data['address'],
+                  postalCode: data['postalCode'],
+                  city: data['city'],
+                  phone: data['phone'],
+                  isDefault: data['isDefault'],
+                );
           } else {
-            await ref.read(addressesNotifierProvider.notifier).addAddress(
-              fullName: data['fullName']!,
-              address: data['address']!,
-              postalCode: data['postalCode']!,
-              city: data['city']!,
-              phone: data['phone']!,
-              isDefault: data['isDefault'] ?? false,
-            );
+            await ref
+                .read(addressesNotifierProvider.notifier)
+                .addAddress(
+                  fullName: data['fullName']!,
+                  address: data['address']!,
+                  postalCode: data['postalCode']!,
+                  city: data['city']!,
+                  phone: data['phone']!,
+                  isDefault: data['isDefault'] ?? false,
+                );
           }
           if (context.mounted) Navigator.pop(context);
         },
@@ -120,12 +136,18 @@ class AddressesScreen extends ConsumerWidget {
     );
   }
 
-  void _confirmDelete(BuildContext context, WidgetRef ref, ShippingAddress address) {
+  void _confirmDelete(
+    BuildContext context,
+    WidgetRef ref,
+    ShippingAddress address,
+  ) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Eliminar dirección'),
-        content: Text('¿Estás seguro de que quieres eliminar la dirección de ${address.fullName}?'),
+        content: Text(
+          '¿Estás seguro de que quieres eliminar la dirección de ${address.fullName}?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -133,7 +155,9 @@ class AddressesScreen extends ConsumerWidget {
           ),
           TextButton(
             onPressed: () {
-              ref.read(addressesNotifierProvider.notifier).deleteAddress(address.id);
+              ref
+                  .read(addressesNotifierProvider.notifier)
+                  .deleteAddress(address.id);
               Navigator.pop(context);
             },
             style: TextButton.styleFrom(foregroundColor: AppColors.error),
@@ -177,11 +201,17 @@ class _AddressCard extends StatelessWidget {
             Row(
               children: [
                 Expanded(
-                  child: Text(address.fullName, style: AppTextStyles.labelLarge),
+                  child: Text(
+                    address.fullName,
+                    style: AppTextStyles.labelLarge,
+                  ),
                 ),
                 if (address.isDefault)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.primary.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
@@ -197,10 +227,7 @@ class _AddressCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 8),
-            Text(
-              address.address,
-              style: AppTextStyles.bodyMedium,
-            ),
+            Text(address.address, style: AppTextStyles.bodyMedium),
             Text(
               '${address.postalCode} ${address.city}',
               style: AppTextStyles.bodyMedium.copyWith(
@@ -278,7 +305,9 @@ class _AddressFormSheetState extends State<_AddressFormSheet> {
     super.initState();
     _nameController = TextEditingController(text: widget.address?.fullName);
     _addressController = TextEditingController(text: widget.address?.address);
-    _postalCodeController = TextEditingController(text: widget.address?.postalCode);
+    _postalCodeController = TextEditingController(
+      text: widget.address?.postalCode,
+    );
     _cityController = TextEditingController(text: widget.address?.city);
     _phoneController = TextEditingController(text: widget.address?.phone);
     _isDefault = widget.address?.isDefault ?? false;
@@ -311,7 +340,10 @@ class _AddressFormSheetState extends State<_AddressFormSheet> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: AppColors.error),
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: AppColors.error,
+          ),
         );
       }
     } finally {
@@ -441,7 +473,11 @@ class _AddressFormSheetState extends State<_AddressFormSheet> {
                         width: 20,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : Text(widget.address != null ? 'Guardar cambios' : 'Añadir dirección'),
+                    : Text(
+                        widget.address != null
+                            ? 'Guardar cambios'
+                            : 'Añadir dirección',
+                      ),
               ),
             ],
           ),
