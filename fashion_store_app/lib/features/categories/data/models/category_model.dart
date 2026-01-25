@@ -5,7 +5,7 @@ part 'category_model.g.dart';
 
 /// Modelo de Categoría
 @freezed
-abstract class CategoryModel with _$CategoryModel {
+class CategoryModel with _$CategoryModel {
   const CategoryModel._();
 
   const factory CategoryModel({

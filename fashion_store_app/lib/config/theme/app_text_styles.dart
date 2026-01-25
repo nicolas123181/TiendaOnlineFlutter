@@ -8,14 +8,6 @@ class AppTextStyles {
   AppTextStyles._();
 
   // ============================================
-  // FUENTES BASE
-  // ============================================
-
-  static String get _headingFontFamily =>
-      GoogleFonts.playfairDisplay().fontFamily!;
-  static String get _bodyFontFamily => GoogleFonts.lato().fontFamily!;
-
-  // ============================================
   // HEADINGS - Playfair Display
   // ============================================
 

@@ -5,7 +5,7 @@ part 'order_model.g.dart';
 
 /// Modelo de Pedido
 @freezed
-abstract class OrderModel with _$OrderModel {
+class OrderModel with _$OrderModel {
   const OrderModel._();
 
   const factory OrderModel({
@@ -90,7 +90,7 @@ abstract class OrderModel with _$OrderModel {
 
 /// Modelo de Item del Pedido
 @freezed
-abstract class OrderItemModel with _$OrderItemModel {
+class OrderItemModel with _$OrderItemModel {
   const OrderItemModel._();
 
   const factory OrderItemModel({

@@ -1,4 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Permisos necesarios para Supabase -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+    
     <application
         android:label="fashion_store_app"
         android:name="${applicationName}"
@@ -23,6 +27,16 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+            
+            <!-- Deep linking para Supabase Auth -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <!-- Acepta URIs que comienzan con YOUR_SCHEME://YOUR_HOSTNAME -->
+                <data android:scheme="com.vantage.fashion-store-app"
+                      android:host="login-callback" />
             </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.

@@ -31,35 +31,64 @@ class AuthRepositoryImpl implements AuthRepository {
     required String password,
   }) async {
     try {
+      print('🔐 Intentando login con email: $email');
+
       final response = await _client.auth.signInWithPassword(
         email: email,
         password: password,
       );
 
+      print('📱 Respuesta de Supabase recibida');
+      print('📱 Usuario: ${response.user?.id}');
+      print('📱 Sesión: ${response.session != null ? "Activa" : "Null"}');
+
       if (response.user == null) {
+        print('❌ Usuario null en respuesta');
         return left(AuthFailure.invalidCredentials());
       }
 
       // Verificar si es admin
       final isAdmin = await _checkAdminStatus(email);
+      print('👤 Es admin: $isAdmin');
 
-      return right(
-        UserModel(
-          id: response.user!.id,
-          email: response.user!.email!,
-          name: response.user!.userMetadata?['name'],
-          isAdmin: isAdmin,
-          createdAt: DateTime.tryParse(response.user!.createdAt),
-        ),
+      // Obtener datos del metadata de auth.users
+      final metadata = response.user!.userMetadata ?? {};
+
+      final userModel = UserModel(
+        id: response.user!.id,
+        email: response.user!.email!,
+        name: metadata['name'] as String?,
+        phone: metadata['phone'] as String?,
+        isAdmin: isAdmin,
+        createdAt: DateTime.tryParse(response.user!.createdAt),
       );
+
+      print('✅ Login exitoso para: ${userModel.email}');
+      return right(userModel);
     } on AuthException catch (e) {
+      print('❌ AuthException: ${e.message}');
+      print('❌ StatusCode: ${e.statusCode}');
+
       if (e.message.contains('Invalid login credentials')) {
         return left(AuthFailure.invalidCredentials());
       }
+      if (e.message.contains('Email not confirmed')) {
+        return left(
+          AuthFailure(
+            message:
+                'Por favor confirma tu correo electrónico antes de iniciar sesión',
+            originalError: e,
+          ),
+        );
+      }
       return left(AuthFailure(message: e.message, originalError: e));
     } catch (e) {
+      print('❌ Error desconocido: $e');
       return left(
-        UnknownFailure(message: 'Error al iniciar sesión', originalError: e),
+        UnknownFailure(
+          message: 'Error al iniciar sesión: $e',
+          originalError: e,
+        ),
       );
     }
   }
@@ -71,21 +100,21 @@ class AuthRepositoryImpl implements AuthRepository {
     String? name,
   }) async {
     try {
+      // Preparar metadata del usuario
+      final metadata = <String, dynamic>{};
+      if (name != null) metadata['name'] = name;
+
       final response = await _client.auth.signUp(
         email: email,
         password: password,
-        data: name != null ? {'name': name} : null,
+        data: metadata.isNotEmpty ? metadata : null,
       );
 
       if (response.user == null) {
         return left(const AuthFailure(message: 'Error al crear la cuenta'));
       }
 
-      // Crear registro en customers
-      await _createCustomerRecord(
-        email: email,
-        name: name ?? email.split('@')[0],
-      );
+      print('✅ Usuario registrado: ${response.user!.email}');
 
       return right(
         UserModel(
@@ -167,26 +196,18 @@ class AuthRepositoryImpl implements AuthRepository {
         return left(AuthFailure.sessionExpired());
       }
 
-      // Obtener datos del cliente
-      final customerData = await _client
-          .from('customers')
-          .select()
-          .eq('email', user.email!)
-          .maybeSingle();
-
       final isAdmin = await _checkAdminStatus(user.email!);
+      final metadata = user.userMetadata ?? {};
 
       return right(
         UserModel(
           id: user.id,
           email: user.email!,
-          name: user.userMetadata?['name'] ?? customerData?['name'],
-          phone: customerData?['phone'],
+          name: metadata['name'] as String?,
+          phone: metadata['phone'] as String?,
+          avatarUrl: metadata['avatar_url'] as String?,
           isAdmin: isAdmin,
           createdAt: DateTime.tryParse(user.createdAt),
-          customerInfo: customerData != null
-              ? CustomerInfo.fromJson(customerData)
-              : null,
         ),
       );
     } catch (e) {
@@ -208,25 +229,21 @@ class AuthRepositoryImpl implements AuthRepository {
         return left(AuthFailure.sessionExpired());
       }
 
-      // Actualizar metadata en auth
-      if (name != null) {
-        await _client.auth.updateUser(UserAttributes(data: {'name': name}));
-      }
-
-      // Actualizar en customers
+      // Preparar datos a actualizar en metadata
       final updateData = <String, dynamic>{};
       if (name != null) updateData['name'] = name;
       if (phone != null) updateData['phone'] = phone;
+      if (avatarUrl != null) updateData['avatar_url'] = avatarUrl;
 
+      // Actualizar metadata en auth.users
       if (updateData.isNotEmpty) {
-        await _client
-            .from('customers')
-            .update(updateData)
-            .eq('email', user.email!);
+        await _client.auth.updateUser(UserAttributes(data: updateData));
+        print('✅ Perfil actualizado: $updateData');
       }
 
       return getUserProfile();
     } catch (e) {
+      print('❌ Error actualizando perfil: $e');
       return left(
         UnknownFailure(message: 'Error al actualizar perfil', originalError: e),
       );
@@ -263,20 +280,6 @@ class AuthRepositoryImpl implements AuthRepository {
       return response != null;
     } catch (_) {
       return false;
-    }
-  }
-
-  Future<void> _createCustomerRecord({
-    required String email,
-    required String name,
-  }) async {
-    try {
-      await _client.from('customers').upsert({
-        'email': email,
-        'name': name,
-      }, onConflict: 'email');
-    } catch (_) {
-      // Ignorar errores al crear el registro de cliente
     }
   }
 }

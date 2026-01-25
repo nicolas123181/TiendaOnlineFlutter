@@ -18,9 +18,18 @@ class ProfileScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('MI CUENTA'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.settings_outlined),
-            onPressed: () {},
+          userAsync.when(
+            data: (user) {
+              if (user != null) {
+                return IconButton(
+                  icon: const Icon(Icons.settings_outlined),
+                  onPressed: () => context.push('/settings'),
+                );
+              }
+              return const SizedBox.shrink();
+            },
+            loading: () => const SizedBox.shrink(),
+            error: (_, __) => const SizedBox.shrink(),
           ),
         ],
       ),

@@ -22,6 +22,9 @@ import '../../features/categories/presentation/screens/categories_screen.dart';
 import '../../features/orders/presentation/screens/orders_screen.dart';
 import '../../features/orders/presentation/screens/order_detail_screen.dart';
 import '../../features/admin/presentation/screens/admin_screens.dart';
+import '../../features/admin/presentation/screens/admin_additional_screens.dart';
+import '../../features/admin/presentation/screens/admin_specialized_screens.dart';
+import '../../features/settings/presentation/screens/settings_screen.dart';
 
 /// Provider del router
 final routerProvider = Provider<GoRouter>((ref) {
@@ -136,6 +139,17 @@ final routerProvider = Provider<GoRouter>((ref) {
       // ============================================
       // RUTAS FUERA DEL SHELL
       // ============================================
+
+      // Configuración
+      GoRoute(
+        path: '/settings',
+        name: 'settings',
+        pageBuilder: (context, state) => CustomTransitionPage(
+          key: state.pageKey,
+          child: const SettingsScreen(),
+          transitionsBuilder: _slideTransition,
+        ),
+      ),
 
       // Detalle de producto
       GoRoute(
@@ -258,6 +272,41 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: 'orders',
             name: 'adminOrders',
             builder: (context, state) => const AdminOrdersScreen(),
+          ),
+          GoRoute(
+            path: 'users',
+            name: 'adminUsers',
+            builder: (context, state) => const AdminUsersScreen(),
+          ),
+          GoRoute(
+            path: 'coupons',
+            name: 'adminCoupons',
+            builder: (context, state) => const AdminCouponsScreen(),
+          ),
+          GoRoute(
+            path: 'categories',
+            name: 'adminCategories',
+            builder: (context, state) => const AdminCategoriesScreen(),
+          ),
+          GoRoute(
+            path: 'sizes',
+            name: 'adminSizes',
+            builder: (context, state) => const AdminSizesScreen(),
+          ),
+          GoRoute(
+            path: 'returns',
+            name: 'adminReturns',
+            builder: (context, state) => const AdminReturnsScreen(),
+          ),
+          GoRoute(
+            path: 'invoices',
+            name: 'adminInvoices',
+            builder: (context, state) => const AdminInvoicesScreen(),
+          ),
+          GoRoute(
+            path: 'newsletter',
+            name: 'adminNewsletter',
+            builder: (context, state) => const AdminNewsletterScreen(),
           ),
           GoRoute(
             path: 'settings',

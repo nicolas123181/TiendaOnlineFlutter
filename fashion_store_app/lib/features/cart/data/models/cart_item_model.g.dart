@@ -6,8 +6,8 @@ part of 'cart_item_model.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-_CartItemModel _$CartItemModelFromJson(Map<String, dynamic> json) =>
-    _CartItemModel(
+_$CartItemModelImpl _$$CartItemModelImplFromJson(Map<String, dynamic> json) =>
+    _$CartItemModelImpl(
       productId: (json['productId'] as num).toInt(),
       name: json['name'] as String,
       slug: json['slug'] as String,
@@ -20,7 +20,7 @@ _CartItemModel _$CartItemModelFromJson(Map<String, dynamic> json) =>
       isOnSale: json['isOnSale'] as bool? ?? false,
     );
 
-Map<String, dynamic> _$CartItemModelToJson(_CartItemModel instance) =>
+Map<String, dynamic> _$$CartItemModelImplToJson(_$CartItemModelImpl instance) =>
     <String, dynamic>{
       'productId': instance.productId,
       'name': instance.name,

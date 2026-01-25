@@ -5,7 +5,7 @@ part 'user_model.g.dart';
 
 /// Modelo de Usuario
 @freezed
-abstract class UserModel with _$UserModel {
+class UserModel with _$UserModel {
   const UserModel._();
 
   const factory UserModel({
@@ -17,7 +17,6 @@ abstract class UserModel with _$UserModel {
     @JsonKey(name: 'is_admin') @Default(false) bool isAdmin,
     @JsonKey(name: 'created_at') DateTime? createdAt,
     @JsonKey(name: 'updated_at') DateTime? updatedAt,
-    CustomerInfo? customerInfo,
   }) = _UserModel;
 
   factory UserModel.fromJson(Map<String, dynamic> json) =>
@@ -41,7 +40,7 @@ abstract class UserModel with _$UserModel {
 
 /// Información adicional del cliente
 @freezed
-abstract class CustomerInfo with _$CustomerInfo {
+class CustomerInfo with _$CustomerInfo {
   const factory CustomerInfo({
     @JsonKey(name: 'default_address') String? defaultAddress,
     @JsonKey(name: 'default_city') String? defaultCity,
@@ -60,7 +59,7 @@ abstract class CustomerInfo with _$CustomerInfo {
 
 /// Estado de autenticación para UI
 @freezed
-abstract class AuthState with _$AuthState {
+class AuthState with _$AuthState {
   const factory AuthState({
     UserModel? user,
     @Default(false) bool isLoading,
@@ -71,7 +70,7 @@ abstract class AuthState with _$AuthState {
 
 /// Estado para acciones de autenticación
 @freezed
-abstract class AuthActionState with _$AuthActionState {
+class AuthActionState with _$AuthActionState {
   const factory AuthActionState({
     @Default(false) bool isLoading,
     String? error,

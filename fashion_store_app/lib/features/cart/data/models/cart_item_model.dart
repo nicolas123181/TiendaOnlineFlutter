@@ -5,7 +5,7 @@ part 'cart_item_model.g.dart';
 
 /// Modelo de Item del Carrito
 @freezed
-abstract class CartItemModel with _$CartItemModel {
+class CartItemModel with _$CartItemModel {
   const CartItemModel._();
 
   const factory CartItemModel({
@@ -52,7 +52,7 @@ abstract class CartItemModel with _$CartItemModel {
 
 /// Estado del carrito
 @freezed
-abstract class CartState with _$CartState {
+class CartState with _$CartState {
   const CartState._();
 
   const factory CartState({

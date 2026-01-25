@@ -7,7 +7,7 @@ part 'product_model.g.dart';
 
 /// Modelo de Producto
 @freezed
-abstract class ProductModel with _$ProductModel {
+class ProductModel with _$ProductModel {
   const ProductModel._();
 
   const factory ProductModel({
@@ -73,7 +73,7 @@ abstract class ProductModel with _$ProductModel {
 
 /// Modelo para variante de producto (talla, color, etc.)
 @freezed
-abstract class ProductVariant with _$ProductVariant {
+class ProductVariant with _$ProductVariant {
   const factory ProductVariant({
     required int id,
     @JsonKey(name: 'product_id') required int productId,

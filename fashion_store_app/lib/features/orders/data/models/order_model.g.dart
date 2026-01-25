@@ -6,45 +6,46 @@ part of 'order_model.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-_OrderModel _$OrderModelFromJson(Map<String, dynamic> json) => _OrderModel(
-  id: (json['id'] as num).toInt(),
-  userId: json['user_id'] as String?,
-  customerEmail: json['customer_email'] as String,
-  customerName: json['customer_name'] as String?,
-  customerPhone: json['customer_phone'] as String?,
-  status: json['status'] as String? ?? 'pending',
-  paymentStatus: json['payment_status'] as String? ?? 'pending',
-  paymentMethod: json['payment_method'] as String?,
-  subtotal: (json['subtotal'] as num).toInt(),
-  discount: (json['discount'] as num?)?.toInt() ?? 0,
-  shippingCost: (json['shipping_cost'] as num?)?.toInt() ?? 0,
-  total: (json['total'] as num).toInt(),
-  shippingAddress: json['shipping_address'] as String?,
-  shippingCity: json['shipping_city'] as String?,
-  shippingPostalCode: json['shipping_postal_code'] as String?,
-  billingAddress: json['billing_address'] as String?,
-  notes: json['notes'] as String?,
-  trackingNumber: json['tracking_number'] as String?,
-  items:
-      (json['items'] as List<dynamic>?)
-          ?.map((e) => OrderItemModel.fromJson(e as Map<String, dynamic>))
-          .toList() ??
-      const <OrderItemModel>[],
-  createdAt: json['created_at'] == null
-      ? null
-      : DateTime.parse(json['created_at'] as String),
-  updatedAt: json['updated_at'] == null
-      ? null
-      : DateTime.parse(json['updated_at'] as String),
-  shippedAt: json['shipped_at'] == null
-      ? null
-      : DateTime.parse(json['shipped_at'] as String),
-  deliveredAt: json['delivered_at'] == null
-      ? null
-      : DateTime.parse(json['delivered_at'] as String),
-);
+_$OrderModelImpl _$$OrderModelImplFromJson(Map<String, dynamic> json) =>
+    _$OrderModelImpl(
+      id: (json['id'] as num).toInt(),
+      userId: json['user_id'] as String?,
+      customerEmail: json['customer_email'] as String,
+      customerName: json['customer_name'] as String?,
+      customerPhone: json['customer_phone'] as String?,
+      status: json['status'] as String? ?? 'pending',
+      paymentStatus: json['payment_status'] as String? ?? 'pending',
+      paymentMethod: json['payment_method'] as String?,
+      subtotal: (json['subtotal'] as num).toInt(),
+      discount: (json['discount'] as num?)?.toInt() ?? 0,
+      shippingCost: (json['shipping_cost'] as num?)?.toInt() ?? 0,
+      total: (json['total'] as num).toInt(),
+      shippingAddress: json['shipping_address'] as String?,
+      shippingCity: json['shipping_city'] as String?,
+      shippingPostalCode: json['shipping_postal_code'] as String?,
+      billingAddress: json['billing_address'] as String?,
+      notes: json['notes'] as String?,
+      trackingNumber: json['tracking_number'] as String?,
+      items:
+          (json['items'] as List<dynamic>?)
+              ?.map((e) => OrderItemModel.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          const <OrderItemModel>[],
+      createdAt: json['created_at'] == null
+          ? null
+          : DateTime.parse(json['created_at'] as String),
+      updatedAt: json['updated_at'] == null
+          ? null
+          : DateTime.parse(json['updated_at'] as String),
+      shippedAt: json['shipped_at'] == null
+          ? null
+          : DateTime.parse(json['shipped_at'] as String),
+      deliveredAt: json['delivered_at'] == null
+          ? null
+          : DateTime.parse(json['delivered_at'] as String),
+    );
 
-Map<String, dynamic> _$OrderModelToJson(_OrderModel instance) =>
+Map<String, dynamic> _$$OrderModelImplToJson(_$OrderModelImpl instance) =>
     <String, dynamic>{
       'id': instance.id,
       'user_id': instance.userId,
@@ -71,8 +72,8 @@ Map<String, dynamic> _$OrderModelToJson(_OrderModel instance) =>
       'delivered_at': instance.deliveredAt?.toIso8601String(),
     };
 
-_OrderItemModel _$OrderItemModelFromJson(Map<String, dynamic> json) =>
-    _OrderItemModel(
+_$OrderItemModelImpl _$$OrderItemModelImplFromJson(Map<String, dynamic> json) =>
+    _$OrderItemModelImpl(
       id: (json['id'] as num).toInt(),
       orderId: (json['order_id'] as num).toInt(),
       productId: (json['product_id'] as num).toInt(),
@@ -84,15 +85,16 @@ _OrderItemModel _$OrderItemModelFromJson(Map<String, dynamic> json) =>
       subtotal: (json['subtotal'] as num).toInt(),
     );
 
-Map<String, dynamic> _$OrderItemModelToJson(_OrderItemModel instance) =>
-    <String, dynamic>{
-      'id': instance.id,
-      'order_id': instance.orderId,
-      'product_id': instance.productId,
-      'product_name': instance.productName,
-      'product_image': instance.productImage,
-      'size': instance.size,
-      'quantity': instance.quantity,
-      'unit_price': instance.unitPrice,
-      'subtotal': instance.subtotal,
-    };
+Map<String, dynamic> _$$OrderItemModelImplToJson(
+  _$OrderItemModelImpl instance,
+) => <String, dynamic>{
+  'id': instance.id,
+  'order_id': instance.orderId,
+  'product_id': instance.productId,
+  'product_name': instance.productName,
+  'product_image': instance.productImage,
+  'size': instance.size,
+  'quantity': instance.quantity,
+  'unit_price': instance.unitPrice,
+  'subtotal': instance.subtotal,
+};

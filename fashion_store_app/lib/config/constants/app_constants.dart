@@ -1,3 +1,5 @@
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 /// Constantes de la aplicación VANTAGE
 class AppConstants {
   AppConstants._();
@@ -12,15 +14,11 @@ class AppConstants {
   // ============================================
   // SUPABASE
   // ============================================
-  static const String supabaseUrl = String.fromEnvironment(
-    'SUPABASE_URL',
-    defaultValue: 'https://your-project.supabase.co',
-  );
+  static String get supabaseUrl =>
+      dotenv.env['PUBLIC_SUPABASE_URL'] ?? 'https://your-project.supabase.co';
 
-  static const String supabaseAnonKey = String.fromEnvironment(
-    'SUPABASE_ANON_KEY',
-    defaultValue: 'your-anon-key',
-  );
+  static String get supabaseAnonKey =>
+      dotenv.env['PUBLIC_SUPABASE_ANON_KEY'] ?? 'your-anon-key';
 
   // ============================================
   // STORAGE BUCKETS

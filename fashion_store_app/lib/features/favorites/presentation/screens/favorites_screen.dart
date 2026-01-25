@@ -1,20 +1,236 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 import '../../../../shared/widgets/empty_states.dart';
+import '../../../../config/theme/app_colors.dart';
+import '../../../../config/theme/app_text_styles.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
+import '../providers/wishlist_provider.dart';
 
-/// Pantalla de favoritos (placeholder)
+/// Pantalla de favoritos (wishlist)
 class FavoritesScreen extends ConsumerWidget {
   const FavoritesScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isAuthenticated = ref.watch(isAuthenticatedProvider);
+
+    if (!isAuthenticated) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('FAVORITOS')),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(
+                  Icons.favorite_outline,
+                  size: 80,
+                  color: AppColors.textSecondary,
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  'Inicia sesión para ver tus favoritos',
+                  style: AppTextStyles.h4,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 32),
+                ElevatedButton(
+                  onPressed: () => context.push('/auth/login'),
+                  child: const Text('INICIAR SESIÓN'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    final wishlistAsync = ref.watch(wishlistProvider);
+
     return Scaffold(
-      appBar: AppBar(title: const Text('FAVORITOS')),
-      body: const EmptyState(
-        icon: Icons.favorite_outline,
-        title: 'Sin favoritos',
-        subtitle: 'Los productos que marques como favoritos aparecerán aquí.',
+      appBar: AppBar(
+        title: const Text('FAVORITOS'),
+        actions: [
+          wishlistAsync.when(
+            data: (items) => items.isNotEmpty
+                ? Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Center(
+                      child: Text(
+                        '${items.length}',
+                        style: AppTextStyles.labelLarge,
+                      ),
+                    ),
+                  )
+                : const SizedBox.shrink(),
+            loading: () => const SizedBox.shrink(),
+            error: (_, __) => const SizedBox.shrink(),
+          ),
+        ],
+      ),
+      body: wishlistAsync.when(
+        data: (items) {
+          if (items.isEmpty) {
+            return EmptyFavoritesState(onExplore: () => context.go('/'));
+          }
+
+          return ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: items.length,
+            itemBuilder: (context, index) {
+              final item = items[index];
+              return Card(
+                margin: const EdgeInsets.only(bottom: 12),
+                child: ListTile(
+                  leading: item.firstImage != null
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: CachedNetworkImage(
+                            imageUrl: item.firstImage!,
+                            width: 60,
+                            height: 60,
+                            fit: BoxFit.cover,
+                            placeholder: (context, url) => const Center(
+                              child: CircularProgressIndicator(),
+                            ),
+                            errorWidget: (context, url, error) =>
+                                const Icon(Icons.image_not_supported),
+                          ),
+                        )
+                      : Container(
+                          width: 60,
+                          height: 60,
+                          color: Colors.grey[200],
+                          child: const Icon(Icons.image),
+                        ),
+                  title: Text(
+                    item.productName ?? 'Producto',
+                    style: AppTextStyles.labelLarge,
+                  ),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Talla: ${item.size}'),
+                      Row(
+                        children: [
+                          if (item.productIsOnSale &&
+                              item.productSalePrice != null) ...[
+                            Text(
+                              '€${item.productPrice}',
+                              style: AppTextStyles.bodySmall.copyWith(
+                                decoration: TextDecoration.lineThrough,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              '€${item.productSalePrice}',
+                              style: AppTextStyles.labelMedium.copyWith(
+                                color: AppColors.error,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.error,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                '-${item.discountPercentage}%',
+                                style: AppTextStyles.bodySmall.copyWith(
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ],
+                          if (!item.productIsOnSale ||
+                              item.productSalePrice == null)
+                            Text(
+                              '€${item.productPrice}',
+                              style: AppTextStyles.labelMedium,
+                            ),
+                        ],
+                      ),
+                      if (!item.hasStock)
+                        Text(
+                          'Sin stock',
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: AppColors.error,
+                          ),
+                        )
+                      else if (item.isLowStock)
+                        Text(
+                          '¡Solo ${item.sizeStock} disponibles!',
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: Colors.orange,
+                          ),
+                        ),
+                    ],
+                  ),
+                  trailing: IconButton(
+                    icon: const Icon(
+                      Icons.delete_outline,
+                      color: AppColors.error,
+                    ),
+                    onPressed: () async {
+                      await ref
+                          .read(wishlistActionsProvider.notifier)
+                          .removeFromWishlist(item.id);
+                    },
+                  ),
+                  onTap: () {
+                    if (item.productSlug != null) {
+                      context.push('/product/${item.productSlug}');
+                    }
+                  },
+                ),
+              );
+            },
+          );
+        },
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, stack) => Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(
+                  Icons.error_outline,
+                  size: 80,
+                  color: AppColors.error,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Error al cargar favoritos',
+                  style: AppTextStyles.h4,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  error.toString(),
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () => ref.invalidate(wishlistProvider),
+                  child: const Text('REINTENTAR'),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

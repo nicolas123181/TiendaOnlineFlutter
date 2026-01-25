@@ -6,8 +6,8 @@ part of 'product_model.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-_ProductModel _$ProductModelFromJson(Map<String, dynamic> json) =>
-    _ProductModel(
+_$ProductModelImpl _$$ProductModelImplFromJson(Map<String, dynamic> json) =>
+    _$ProductModelImpl(
       id: (json['id'] as num).toInt(),
       name: json['name'] as String,
       slug: json['slug'] as String,
@@ -36,7 +36,7 @@ _ProductModel _$ProductModelFromJson(Map<String, dynamic> json) =>
           : DateTime.parse(json['updated_at'] as String),
     );
 
-Map<String, dynamic> _$ProductModelToJson(_ProductModel instance) =>
+Map<String, dynamic> _$$ProductModelImplToJson(_$ProductModelImpl instance) =>
     <String, dynamic>{
       'id': instance.id,
       'name': instance.name,
@@ -56,8 +56,8 @@ Map<String, dynamic> _$ProductModelToJson(_ProductModel instance) =>
       'updated_at': instance.updatedAt?.toIso8601String(),
     };
 
-_ProductVariant _$ProductVariantFromJson(Map<String, dynamic> json) =>
-    _ProductVariant(
+_$ProductVariantImpl _$$ProductVariantImplFromJson(Map<String, dynamic> json) =>
+    _$ProductVariantImpl(
       id: (json['id'] as num).toInt(),
       productId: (json['product_id'] as num).toInt(),
       size: json['size'] as String?,
@@ -67,13 +67,14 @@ _ProductVariant _$ProductVariantFromJson(Map<String, dynamic> json) =>
       sku: json['sku'] as String?,
     );
 
-Map<String, dynamic> _$ProductVariantToJson(_ProductVariant instance) =>
-    <String, dynamic>{
-      'id': instance.id,
-      'product_id': instance.productId,
-      'size': instance.size,
-      'color': instance.color,
-      'stock': instance.stock,
-      'price_modifier': instance.priceModifier,
-      'sku': instance.sku,
-    };
+Map<String, dynamic> _$$ProductVariantImplToJson(
+  _$ProductVariantImpl instance,
+) => <String, dynamic>{
+  'id': instance.id,
+  'product_id': instance.productId,
+  'size': instance.size,
+  'color': instance.color,
+  'stock': instance.stock,
+  'price_modifier': instance.priceModifier,
+  'sku': instance.sku,
+};

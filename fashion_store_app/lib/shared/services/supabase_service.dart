@@ -18,6 +18,7 @@ class SupabaseService {
         authFlowType: AuthFlowType.pkce,
       ),
       realtimeClientOptions: const RealtimeClientOptions(eventsPerSecond: 2),
+      debug: true, // Habilitar logs de depuración
     );
     _client = Supabase.instance.client;
   }
