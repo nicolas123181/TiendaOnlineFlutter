@@ -12,6 +12,7 @@ import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../categories/presentation/providers/categories_provider.dart';
 import '../../data/models/admin_stats.dart';
 import '../providers/admin_dashboard_provider.dart';
+import '../providers/products_provider.dart';
 
 /// Dashboard Ejecutivo del Admin Panel
 class AdminDashboardScreen extends ConsumerWidget {
@@ -281,6 +282,14 @@ class _AdminDrawer extends StatelessWidget {
                     onTap: () {
                       Navigator.pop(context);
                       context.go('/admin/sizes');
+                    },
+                  ),
+                  _DrawerItem(
+                    icon: Icons.warning_amber,
+                    label: 'Alertas Stock',
+                    onTap: () {
+                      Navigator.pop(context);
+                      context.go('/admin/low-stock');
                     },
                   ),
                   _DrawerItem(
@@ -572,11 +581,23 @@ class _SalesChart extends StatelessWidget {
 }
 
 /// Pantalla de productos del admin
-class AdminProductsScreen extends StatelessWidget {
+class AdminProductsScreen extends ConsumerStatefulWidget {
   const AdminProductsScreen({super.key});
 
   @override
+  ConsumerState<AdminProductsScreen> createState() =>
+      _AdminProductsScreenState();
+}
+
+class _AdminProductsScreenState extends ConsumerState<AdminProductsScreen> {
+  String _searchQuery = '';
+  String _filterCategory = 'all';
+
+  @override
   Widget build(BuildContext context) {
+    final productsAsync = ref.watch(productsListProvider);
+    final categoriesAsync = ref.watch(categoriesProvider);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Productos'),
@@ -587,8 +608,538 @@ class AdminProductsScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: const Center(child: Text('Lista de productos - En desarrollo')),
+      body: Column(
+        children: [
+          // Barra de búsqueda y filtros
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                TextField(
+                  decoration: InputDecoration(
+                    hintText: 'Buscar productos...',
+                    prefixIcon: const Icon(Icons.search),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  onChanged: (value) {
+                    setState(() {
+                      _searchQuery = value.toLowerCase();
+                    });
+                  },
+                ),
+                const SizedBox(height: 12),
+                // Filtro por categoría
+                categoriesAsync.when(
+                  data: (categories) => SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        FilterChip(
+                          label: const Text('Todas'),
+                          selected: _filterCategory == 'all',
+                          onSelected: (selected) {
+                            if (selected) {
+                              setState(() {
+                                _filterCategory = 'all';
+                              });
+                            }
+                          },
+                        ),
+                        const SizedBox(width: 8),
+                        ...categories.map(
+                          (cat) => Padding(
+                            padding: const EdgeInsets.only(right: 8),
+                            child: FilterChip(
+                              label: Text(cat.name),
+                              selected: _filterCategory == cat.id.toString(),
+                              onSelected: (selected) {
+                                if (selected) {
+                                  setState(() {
+                                    _filterCategory = cat.id.toString();
+                                  });
+                                }
+                              },
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  loading: () => const SizedBox.shrink(),
+                  error: (_, __) => const SizedBox.shrink(),
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1),
+          // Lista de productos
+          Expanded(
+            child: productsAsync.when(
+              data: (products) {
+                // Filtrar productos
+                var filteredProducts = products.where((p) {
+                  final matchesSearch =
+                      _searchQuery.isEmpty ||
+                      p['name'].toString().toLowerCase().contains(_searchQuery);
+                  final matchesCategory =
+                      _filterCategory == 'all' ||
+                      p['category_id'].toString() == _filterCategory;
+                  return matchesSearch && matchesCategory;
+                }).toList();
+
+                if (filteredProducts.isEmpty) {
+                  return const Center(
+                    child: Text('No se encontraron productos'),
+                  );
+                }
+
+                return ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: filteredProducts.length,
+                  itemBuilder: (context, index) {
+                    final product = filteredProducts[index];
+                    final images = product['images'] as List?;
+                    final imageUrl = images != null && images.isNotEmpty
+                        ? images[0]
+                        : '';
+                    final price = (product['price'] ?? 0) / 100.0;
+                    final stock = product['stock'] ?? 0;
+                    final productSizes =
+                        product['product_sizes'] as List? ?? [];
+
+                    return Card(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      child: InkWell(
+                        onTap: () => _showProductDetails(context, product),
+                        borderRadius: BorderRadius.circular(12),
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Column(
+                            children: [
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: imageUrl.isNotEmpty
+                                        ? Image.network(
+                                            imageUrl,
+                                            width: 80,
+                                            height: 80,
+                                            fit: BoxFit.cover,
+                                            errorBuilder:
+                                                (context, error, stackTrace) {
+                                                  return Container(
+                                                    width: 80,
+                                                    height: 80,
+                                                    color: Colors.grey[300],
+                                                    child: const Icon(
+                                                      Icons.image,
+                                                    ),
+                                                  );
+                                                },
+                                          )
+                                        : Container(
+                                            width: 80,
+                                            height: 80,
+                                            color: Colors.grey[300],
+                                            child: const Icon(Icons.image),
+                                          ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          product['name'] ?? '',
+                                          style: AppTextStyles.labelLarge,
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          '${price.toStringAsFixed(2)} €',
+                                          style: AppTextStyles.h4.copyWith(
+                                            color: AppColors.primary,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Row(
+                                          children: [
+                                            Container(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 8,
+                                                    vertical: 4,
+                                                  ),
+                                              decoration: BoxDecoration(
+                                                color: stock > 0
+                                                    ? Colors.green.withOpacity(
+                                                        0.1,
+                                                      )
+                                                    : Colors.red.withOpacity(
+                                                        0.1,
+                                                      ),
+                                                borderRadius:
+                                                    BorderRadius.circular(4),
+                                              ),
+                                              child: Text(
+                                                'Stock total: $stock',
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  color: stock > 0
+                                                      ? Colors.green[700]
+                                                      : Colors.red[700],
+                                                ),
+                                              ),
+                                            ),
+                                            if (product['featured'] ==
+                                                true) ...[
+                                              const SizedBox(width: 8),
+                                              Container(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 8,
+                                                      vertical: 4,
+                                                    ),
+                                                decoration: BoxDecoration(
+                                                  color: AppColors.primary
+                                                      .withOpacity(0.1),
+                                                  borderRadius:
+                                                      BorderRadius.circular(4),
+                                                ),
+                                                child: Text(
+                                                  '⭐ Destacado',
+                                                  style: TextStyle(
+                                                    fontSize: 12,
+                                                    color: AppColors.primary,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      IconButton(
+                                        icon: const Icon(Icons.edit, size: 20),
+                                        onPressed: () {
+                                          context.go(
+                                            '/admin/products/${product['id']}/edit',
+                                          );
+                                        },
+                                      ),
+                                      IconButton(
+                                        icon: Icon(
+                                          Icons.delete,
+                                          color: Colors.red[400],
+                                          size: 20,
+                                        ),
+                                        onPressed: () => _confirmDelete(
+                                          context,
+                                          ref,
+                                          product,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                              // Stock por tallas
+                              if (productSizes.isNotEmpty) ...[
+                                const SizedBox(height: 12),
+                                const Divider(height: 1),
+                                const SizedBox(height: 8),
+                                Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.straighten,
+                                      size: 16,
+                                      color: Colors.grey,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    const Text(
+                                      'Stock por tallas:',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.grey,
+                                      ),
+                                    ),
+                                    const Spacer(),
+                                    _buildSizeStockIndicators(productSizes),
+                                  ],
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                );
+              },
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (err, stack) => Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text('Error: $err'),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () => ref.invalidate(productsListProvider),
+                      child: const Text('Reintentar'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
+  }
+
+  Widget _buildSizeStockIndicators(List<dynamic> sizes) {
+    return Wrap(
+      spacing: 6,
+      children: sizes.take(6).map((sizeData) {
+        final size = sizeData['size'] ?? '';
+        final stock = sizeData['stock'] ?? 0;
+        Color bgColor;
+        Color textColor;
+
+        if (stock == 0) {
+          bgColor = Colors.red[100]!;
+          textColor = Colors.red[700]!;
+        } else if (stock <= 5) {
+          bgColor = Colors.orange[100]!;
+          textColor = Colors.orange[700]!;
+        } else {
+          bgColor = Colors.green[100]!;
+          textColor = Colors.green[700]!;
+        }
+
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+          decoration: BoxDecoration(
+            color: bgColor,
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: Text(
+            '$size: $stock',
+            style: TextStyle(
+              fontSize: 10,
+              color: textColor,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  void _showProductDetails(BuildContext context, Map<String, dynamic> product) {
+    final productSizes = product['product_sizes'] as List? ?? [];
+    final images = product['images'] as List? ?? [];
+    final price = (product['price'] ?? 0) / 100.0;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.7,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
+        expand: false,
+        builder: (context, scrollController) => SingleChildScrollView(
+          controller: scrollController,
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              Text(product['name'] ?? '', style: AppTextStyles.h3),
+              const SizedBox(height: 8),
+              Text(
+                '${price.toStringAsFixed(2)} €',
+                style: AppTextStyles.h4.copyWith(color: AppColors.primary),
+              ),
+              const SizedBox(height: 24),
+
+              // Stock por tallas
+              if (productSizes.isNotEmpty) ...[
+                Text('📐 Stock por Tallas', style: AppTextStyles.labelLarge),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: productSizes.map((sizeData) {
+                    final size = sizeData['size'] ?? '';
+                    final stock = sizeData['stock'] ?? 0;
+                    Color bgColor;
+                    Color textColor;
+                    String label;
+
+                    if (stock == 0) {
+                      bgColor = Colors.red[100]!;
+                      textColor = Colors.red[700]!;
+                      label = 'AGOTADO';
+                    } else if (stock <= 5) {
+                      bgColor = Colors.orange[100]!;
+                      textColor = Colors.orange[700]!;
+                      label = '$stock uds';
+                    } else {
+                      bgColor = Colors.green[100]!;
+                      textColor = Colors.green[700]!;
+                      label = '$stock uds';
+                    }
+
+                    return Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: bgColor,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: textColor.withOpacity(0.3)),
+                      ),
+                      child: Column(
+                        children: [
+                          Text(
+                            size,
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: textColor,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            label,
+                            style: TextStyle(fontSize: 11, color: textColor),
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 24),
+              ],
+
+              // Imágenes
+              if (images.isNotEmpty) ...[
+                Text('🖼️ Imágenes', style: AppTextStyles.labelLarge),
+                const SizedBox(height: 12),
+                SizedBox(
+                  height: 100,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: images.length,
+                    itemBuilder: (context, index) {
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Image.network(
+                            images[index],
+                            width: 100,
+                            height: 100,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(height: 24),
+              ],
+
+              // Acciones
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        context.go('/admin/products/${product['id']}/edit');
+                      },
+                      icon: const Icon(Icons.edit),
+                      label: const Text('Editar'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _confirmDelete(
+    BuildContext context,
+    WidgetRef ref,
+    Map<String, dynamic> product,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Eliminar producto'),
+        content: Text(
+          '¿Estás seguro de que quieres eliminar "${product['name']}"?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Eliminar'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      try {
+        await ref.read(productActionsProvider).deleteProduct(product['id']);
+        ref.invalidate(productsListProvider);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Producto eliminado con éxito')),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+          );
+        }
+      }
+    }
   }
 }
 

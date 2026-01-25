@@ -184,4 +184,7 @@ class AppTextStyles {
     letterSpacing: 1,
     height: 1.0,
   );
+
+  /// Caption - alias de labelSmall para textos pequeños
+  static TextStyle get caption => labelSmall;
 }

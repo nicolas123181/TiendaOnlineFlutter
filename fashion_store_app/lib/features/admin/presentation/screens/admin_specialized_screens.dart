@@ -261,7 +261,7 @@ class _InvoiceCard extends StatelessWidget {
             Text(invoice.customerName),
             Text(invoice.customerEmail, style: AppTextStyles.bodySmall),
             Text(
-              DateFormat('dd/MM/yyyy').format(invoice.issuedAt),
+              DateFormat('dd/MM/yyyy').format(invoice.issueDate),
               style: AppTextStyles.bodySmall.copyWith(color: Colors.grey),
             ),
           ],

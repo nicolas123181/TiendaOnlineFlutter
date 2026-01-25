@@ -12,8 +12,8 @@ final lowStockSizesProvider = FutureProvider<List<ProductSize>>((ref) async {
   final response = await supabase
       .from('product_sizes')
       .select('*')
-      .lte('quantity', 5)
-      .order('quantity', ascending: true);
+      .lte('stock', 5)
+      .order('stock', ascending: true);
 
   return (response as List).map((json) => ProductSize.fromJson(json)).toList();
 });
@@ -41,12 +41,12 @@ class SizeActions {
 
   SizeActions(this.ref);
 
-  Future<void> updateStock(int id, int newQuantity) async {
+  Future<void> updateStock(int id, int newStock) async {
     final supabase = ref.read(supabaseClientProvider);
 
     await supabase
         .from('product_sizes')
-        .update({'quantity': newQuantity})
+        .update({'stock': newStock})
         .eq('id', id);
 
     ref.invalidate(lowStockSizesProvider);
@@ -55,14 +55,14 @@ class SizeActions {
   Future<void> createSize({
     required int productId,
     required String size,
-    required int quantity,
+    required int stock,
   }) async {
     final supabase = ref.read(supabaseClientProvider);
 
     await supabase.from('product_sizes').insert({
       'product_id': productId,
       'size': size,
-      'quantity': quantity,
+      'stock': stock,
     });
 
     ref.invalidate(lowStockSizesProvider);

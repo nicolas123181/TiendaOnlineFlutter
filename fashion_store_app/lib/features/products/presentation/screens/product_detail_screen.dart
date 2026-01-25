@@ -74,15 +74,12 @@ class ProductDetailScreen extends ConsumerWidget {
                   background: Stack(
                     fit: StackFit.expand,
                     children: [
-                      // Galería de imágenes
-                      Hero(
-                        tag: 'product-${product.id}',
-                        child: ImageGallery(
-                          images: product.images.isNotEmpty
-                              ? product.images
-                              : [product.mainImage],
-                          heroTagPrefix: 'product-${product.id}',
-                        ),
+                      // Galería de imágenes (sin Hero para evitar anidamiento)
+                      ImageGallery(
+                        images: product.images.isNotEmpty
+                            ? product.images
+                            : [product.mainImage],
+                        heroTagPrefix: null, // Desactivar Hero en galería
                       ),
 
                       // Badges

@@ -24,6 +24,9 @@ class AppColors {
   // COLORES SECUNDARIOS
   // ============================================
 
+  /// Negro/Gris oscuro - Texto principal
+  static const Color text = Color(0xFF1A1A1A);
+
   /// Gris oscuro - Textos secundarios
   static const Color textSecondary = Color(0xFF6B6B6B);
 

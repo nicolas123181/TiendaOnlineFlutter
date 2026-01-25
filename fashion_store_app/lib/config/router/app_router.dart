@@ -21,9 +21,13 @@ import '../../features/favorites/presentation/screens/favorites_screen.dart';
 import '../../features/categories/presentation/screens/categories_screen.dart';
 import '../../features/orders/presentation/screens/orders_screen.dart';
 import '../../features/orders/presentation/screens/order_detail_screen.dart';
+import '../../features/profile/presentation/screens/addresses_screen.dart';
 import '../../features/admin/presentation/screens/admin_screens.dart';
 import '../../features/admin/presentation/screens/admin_additional_screens.dart';
 import '../../features/admin/presentation/screens/admin_specialized_screens.dart';
+import '../../features/admin/presentation/screens/admin_product_form_screen.dart';
+import '../../features/admin/presentation/screens/admin_improved_screens.dart';
+import '../../features/admin/presentation/screens/admin_complete_screens.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
 
 /// Provider del router
@@ -267,11 +271,26 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: 'products',
             name: 'adminProducts',
             builder: (context, state) => const AdminProductsScreen(),
+            routes: [
+              GoRoute(
+                path: 'new',
+                name: 'adminProductNew',
+                builder: (context, state) => const AdminProductFormScreen(),
+              ),
+              GoRoute(
+                path: ':id/edit',
+                name: 'adminProductEdit',
+                builder: (context, state) {
+                  final id = int.parse(state.pathParameters['id']!);
+                  return AdminProductFormScreen(productId: id);
+                },
+              ),
+            ],
           ),
           GoRoute(
             path: 'orders',
             name: 'adminOrders',
-            builder: (context, state) => const AdminOrdersScreen(),
+            builder: (context, state) => const AdminOrdersScreenImproved(),
           ),
           GoRoute(
             path: 'users',
@@ -286,7 +305,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: 'categories',
             name: 'adminCategories',
-            builder: (context, state) => const AdminCategoriesScreen(),
+            builder: (context, state) => const AdminCategoriesScreenImproved(),
           ),
           GoRoute(
             path: 'sizes',
@@ -296,22 +315,27 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: 'returns',
             name: 'adminReturns',
-            builder: (context, state) => const AdminReturnsScreen(),
+            builder: (context, state) => const AdminReturnsScreenComplete(),
           ),
           GoRoute(
             path: 'invoices',
             name: 'adminInvoices',
-            builder: (context, state) => const AdminInvoicesScreen(),
+            builder: (context, state) => const AdminInvoicesScreenComplete(),
           ),
           GoRoute(
             path: 'newsletter',
             name: 'adminNewsletter',
-            builder: (context, state) => const AdminNewsletterScreen(),
+            builder: (context, state) => const AdminNewsletterScreenComplete(),
           ),
           GoRoute(
             path: 'settings',
             name: 'adminSettings',
-            builder: (context, state) => const AdminSettingsScreen(),
+            builder: (context, state) => const AdminSettingsScreenComplete(),
+          ),
+          GoRoute(
+            path: 'low-stock',
+            name: 'adminLowStock',
+            builder: (context, state) => const AdminLowStockAlertsScreen(),
           ),
         ],
       ),
@@ -331,6 +355,13 @@ final routerProvider = Provider<GoRouter>((ref) {
             },
           ),
         ],
+      ),
+      
+      // Direcciones del usuario
+      GoRoute(
+        path: '/addresses',
+        name: 'addresses',
+        builder: (context, state) => const AddressesScreen(),
       ),
     ],
   );

@@ -62,6 +62,25 @@ class AppConstants {
   static const int standardShippingCost = 500; // 5€ en céntimos
 
   // ============================================
+  // CLOUDINARY - CONFIGURACIÓN PARA UPLOAD DE IMÁGENES
+  // ============================================
+  // TODO: Obtener estas credenciales de Cloudinary Dashboard
+  // 1. Ir a: https://cloudinary.com/console
+  // 2. Cloud Name: Settings → Account → Cloud name
+  // 3. Upload Preset: Settings → Upload → Add upload preset (unsigned)
+  static String get cloudinaryCloudName =>
+      dotenv.env['CLOUDINARY_CLOUD_NAME'] ?? 'TU_CLOUD_NAME_AQUI';
+
+  static String get cloudinaryUploadPreset =>
+      dotenv.env['CLOUDINARY_UPLOAD_PRESET'] ?? 'TU_UPLOAD_PRESET_AQUI';
+
+  // ============================================
+  // WEB API - Para funcionalidades que usan el servidor web
+  // ============================================
+  static String get webApiBaseUrl =>
+      dotenv.env['WEB_API_BASE_URL'] ?? 'https://nicovantage.victoriafp.online';
+
+  // ============================================
   // TALLAS DISPONIBLES
   // ============================================
   static const List<String> availableSizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];

@@ -145,7 +145,7 @@ class _ProfileContent extends ConsumerWidget {
             icon: Icons.location_on_outlined,
             title: 'Direcciones',
             subtitle: 'Gestionar direcciones de envío',
-            onTap: () {},
+            onTap: () => context.push('/addresses'),
           ),
           _MenuItem(
             icon: Icons.credit_card_outlined,

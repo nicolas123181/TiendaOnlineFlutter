@@ -6,6 +6,7 @@ import '../../../../config/theme/app_colors.dart';
 import '../../../../config/theme/app_text_styles.dart';
 import '../../../../shared/widgets/loaders.dart';
 import '../../../../shared/widgets/empty_states.dart';
+import '../../../../shared/providers/theme_provider.dart';
 import '../../../products/presentation/providers/products_provider.dart';
 import '../../../settings/presentation/providers/settings_provider.dart';
 import '../../../categories/presentation/providers/categories_provider.dart';
@@ -33,6 +34,16 @@ class HomeScreen extends ConsumerWidget {
               pinned: true,
               expandedHeight: 60,
               backgroundColor: AppColors.surface,
+              leading: Consumer(
+                builder: (context, ref, _) {
+                  final isDark = ref.watch(themeModeProvider) == ThemeMode.dark;
+                  return IconButton(
+                    icon: Icon(isDark ? Icons.light_mode : Icons.dark_mode),
+                    onPressed: () => ref.read(themeModeProvider.notifier).toggleTheme(),
+                    tooltip: isDark ? 'Modo claro' : 'Modo oscuro',
+                  );
+                },
+              ),
               title: Text(
                 'VANTAGE',
                 style: AppTextStyles.h3.copyWith(

@@ -8,6 +8,7 @@ import 'config/theme/app_theme.dart';
 import 'config/router/app_router.dart';
 import 'shared/services/supabase_service.dart';
 import 'shared/services/local_storage_service.dart';
+import 'shared/providers/theme_provider.dart';
 
 /// Punto de entrada de la aplicación VANTAGE
 void main() async {
@@ -73,6 +74,7 @@ class VantageApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
+    final themeMode = ref.watch(themeModeProvider);
 
     return MaterialApp.router(
       title: 'VANTAGE',
@@ -81,7 +83,7 @@ class VantageApp extends ConsumerWidget {
       // Tema
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.light,
+      themeMode: themeMode,
 
       // Router
       routerConfig: router,
