@@ -20,7 +20,7 @@ class ProductModel with _$ProductModel {
     @JsonKey(name: 'sale_price') int? salePrice,
     @Default(0) int stock,
     @JsonKey(name: 'is_on_sale') @Default(false) bool isOnSale,
-    @JsonKey(name: 'is_featured') @Default(false) bool isFeatured,
+    @Default(false) bool featured,
     @JsonKey(name: 'image_url') String? imageUrl,
     @Default(<String>[]) List<String> images,
     @JsonKey(name: 'category_id') int? categoryId,

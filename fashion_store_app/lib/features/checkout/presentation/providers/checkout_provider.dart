@@ -115,10 +115,12 @@ final checkoutProvider = NotifierProvider<CheckoutNotifier, CheckoutState>(
 class CheckoutNotifier extends Notifier<CheckoutState> {
   @override
   CheckoutState build() {
-    // Cargar métodos de envío al inicializar
-    _loadShippingMethods();
-    // Pre-llenar datos del usuario si está logueado
-    _prefillUserData();
+    // Cargar datos de forma asíncrona después de la inicialización
+    Future.microtask(() {
+      _loadShippingMethods();
+      _prefillUserData();
+    });
+
     return const CheckoutState();
   }
 
@@ -281,6 +283,27 @@ class CheckoutNotifier extends Notifier<CheckoutState> {
         customerPhone: user.userMetadata?['phone'] ?? '',
       );
     }
+  }
+
+  // Método público para pre-llenar datos del usuario
+  void prefillUserData(dynamic user) {
+    if (user != null) {
+      state = state.copyWith(
+        customerEmail: user.email ?? '',
+        customerName: user.displayName ?? user.email?.split('@')[0] ?? '',
+      );
+    }
+  }
+
+  // Método para cargar dirección guardada
+  void loadSavedAddress(dynamic address) {
+    state = state.copyWith(
+      customerName: address.fullName ?? state.customerName,
+      customerPhone: address.phone ?? state.customerPhone,
+      customerAddress: address.address ?? state.customerAddress,
+      customerCity: address.city ?? state.customerCity,
+      customerPostalCode: address.postalCode ?? state.customerPostalCode,
+    );
   }
 
   // ============================================

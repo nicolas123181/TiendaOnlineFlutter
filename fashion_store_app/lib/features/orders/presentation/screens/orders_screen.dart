@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../../../../config/theme/app_colors.dart';
 import '../../../../config/theme/app_text_styles.dart';
 import '../../../../shared/widgets/empty_states.dart';
+import '../../../../shared/widgets/custom_app_bar.dart';
 import '../providers/user_orders_provider.dart';
 
 /// Pantalla de pedidos del usuario
@@ -17,7 +18,7 @@ class OrdersScreen extends ConsumerWidget {
     final ordersAsync = ref.watch(userOrdersProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('MIS PEDIDOS')),
+      appBar: const CustomAppBar(title: 'MIS PEDIDOS'),
       body: ordersAsync.when(
         data: (orders) {
           if (orders.isEmpty) {
@@ -123,7 +124,7 @@ class _OrderCard extends StatelessWidget {
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: _getStatusColor().withOpacity(0.1),
+                      color: _getStatusColor().withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Row(
@@ -208,7 +209,7 @@ class _OrderCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: AppColors.info.withOpacity(0.1),
+                    color: AppColors.info.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(

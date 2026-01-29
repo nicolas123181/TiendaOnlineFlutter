@@ -65,7 +65,7 @@ class _CreateReturnScreenState extends ConsumerState<CreateReturnScreen> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: AppColors.info.withOpacity(0.1),
+                color: AppColors.info.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
@@ -126,7 +126,7 @@ class _CreateReturnScreenState extends ConsumerState<CreateReturnScreen> {
                 padding: const EdgeInsets.all(12),
                 margin: const EdgeInsets.only(bottom: 16),
                 decoration: BoxDecoration(
-                  color: AppColors.error.withOpacity(0.1),
+                  color: AppColors.error.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
@@ -257,20 +257,20 @@ class ReturnStatusBadge extends StatelessWidget {
 
     switch (status) {
       case 'pending':
-        bgColor = AppColors.warning.withOpacity(0.1);
+        bgColor = AppColors.warning.withValues(alpha: 0.1);
         textColor = AppColors.warning;
         break;
       case 'approved':
-        bgColor = AppColors.info.withOpacity(0.1);
+        bgColor = AppColors.info.withValues(alpha: 0.1);
         textColor = AppColors.info;
         break;
       case 'completed':
-        bgColor = AppColors.success.withOpacity(0.1);
+        bgColor = AppColors.success.withValues(alpha: 0.1);
         textColor = AppColors.success;
         break;
       case 'rejected':
       case 'cancelled':
-        bgColor = AppColors.error.withOpacity(0.1);
+        bgColor = AppColors.error.withValues(alpha: 0.1);
         textColor = AppColors.error;
         break;
       default:

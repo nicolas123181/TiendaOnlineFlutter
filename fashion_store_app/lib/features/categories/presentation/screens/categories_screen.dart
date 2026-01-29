@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../config/theme/app_colors.dart';
 import '../../../../config/theme/app_text_styles.dart';
 import '../../../../shared/widgets/loaders.dart';
+import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../../categories/presentation/providers/categories_provider.dart';
 
 /// Pantalla de categorías
@@ -16,7 +17,7 @@ class CategoriesScreen extends ConsumerWidget {
     final categoriesAsync = ref.watch(categoriesProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('CATEGORÍAS')),
+      appBar: const CustomAppBar(title: 'CATEGORÍAS'),
       body: categoriesAsync.when(
         data: (categories) {
           return GridView.builder(

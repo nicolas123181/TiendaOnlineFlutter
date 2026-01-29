@@ -16,7 +16,7 @@ class OrderModel with _$OrderModel {
     @JsonKey(name: 'customer_phone') String? customerPhone,
     @Default('pending') String status,
     @JsonKey(name: 'payment_status') @Default('pending') String paymentStatus,
-    @JsonKey(name: 'payment_method') String? paymentMethod,
+    // @JsonKey(name: 'payment_method') String? paymentMethod, // Ya no se usa, Stripe maneja el pago
     required int subtotal,
     @Default(0) int discount,
     @JsonKey(name: 'shipping_cost') @Default(0) int shippingCost,

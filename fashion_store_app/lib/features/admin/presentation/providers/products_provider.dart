@@ -138,8 +138,9 @@ class ProductActions {
       updates['sale_price'] = null;
       updates['is_on_sale'] = false;
     }
-    if (saleEndsAt != null)
+    if (saleEndsAt != null) {
       updates['sale_ends_at'] = saleEndsAt.toIso8601String();
+    }
     if (images != null) updates['images'] = images;
 
     await supabase.from('products').update(updates).eq('id', id);

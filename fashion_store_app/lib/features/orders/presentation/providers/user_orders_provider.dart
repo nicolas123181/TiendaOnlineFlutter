@@ -18,6 +18,13 @@ class UserOrder {
   final DateTime? updatedAt;
   final List<OrderItem> items;
   final ShippingCarrier? carrier;
+  // Información del cliente
+  final String customerName;
+  final String customerEmail;
+  final String? customerPhone;
+  final String customerAddress;
+  final String customerCity;
+  final String customerPostalCode;
 
   UserOrder({
     required this.id,
@@ -31,6 +38,12 @@ class UserOrder {
     this.updatedAt,
     required this.items,
     this.carrier,
+    required this.customerName,
+    required this.customerEmail,
+    this.customerPhone,
+    required this.customerAddress,
+    required this.customerCity,
+    required this.customerPostalCode,
   });
 
   factory UserOrder.fromJson(Map<String, dynamic> json) {
@@ -53,6 +66,12 @@ class UserOrder {
       carrier: carrierData != null
           ? ShippingCarrier.fromJson(carrierData)
           : null,
+      customerName: json['customer_name'] as String? ?? 'Cliente',
+      customerEmail: json['customer_email'] as String? ?? '',
+      customerPhone: json['customer_phone'] as String?,
+      customerAddress: json['customer_address'] as String? ?? '',
+      customerCity: json['customer_city'] as String? ?? '',
+      customerPostalCode: json['customer_postal_code'] as String? ?? '',
     );
   }
 
@@ -158,6 +177,12 @@ final userOrdersProvider = FutureProvider<List<UserOrder>>((ref) async {
         tracking_number,
         created_at,
         updated_at,
+        customer_name,
+        customer_email,
+        customer_phone,
+        customer_address,
+        customer_city,
+        customer_postal_code,
         order_items(
           id,
           product_id,
@@ -173,7 +198,7 @@ final userOrdersProvider = FutureProvider<List<UserOrder>>((ref) async {
           tracking_url_template
         )
       ''')
-      .eq('customer_email', user.email!)
+      .eq('customer_email', user.email)
       .order('created_at', ascending: false);
 
   return (response as List).map((json) => UserOrder.fromJson(json)).toList();

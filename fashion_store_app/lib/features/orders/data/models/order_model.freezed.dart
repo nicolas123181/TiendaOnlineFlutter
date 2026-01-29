@@ -32,9 +32,7 @@ mixin _$OrderModel {
   String? get customerPhone => throw _privateConstructorUsedError;
   String get status => throw _privateConstructorUsedError;
   @JsonKey(name: 'payment_status')
-  String get paymentStatus => throw _privateConstructorUsedError;
-  @JsonKey(name: 'payment_method')
-  String? get paymentMethod => throw _privateConstructorUsedError;
+  String get paymentStatus => throw _privateConstructorUsedError; // @JsonKey(name: 'payment_method') String? paymentMethod, // Ya no se usa, Stripe maneja el pago
   int get subtotal => throw _privateConstructorUsedError;
   int get discount => throw _privateConstructorUsedError;
   @JsonKey(name: 'shipping_cost')
@@ -86,7 +84,6 @@ abstract class $OrderModelCopyWith<$Res> {
     @JsonKey(name: 'customer_phone') String? customerPhone,
     String status,
     @JsonKey(name: 'payment_status') String paymentStatus,
-    @JsonKey(name: 'payment_method') String? paymentMethod,
     int subtotal,
     int discount,
     @JsonKey(name: 'shipping_cost') int shippingCost,
@@ -127,7 +124,6 @@ class _$OrderModelCopyWithImpl<$Res, $Val extends OrderModel>
     Object? customerPhone = freezed,
     Object? status = null,
     Object? paymentStatus = null,
-    Object? paymentMethod = freezed,
     Object? subtotal = null,
     Object? discount = null,
     Object? shippingCost = null,
@@ -174,10 +170,6 @@ class _$OrderModelCopyWithImpl<$Res, $Val extends OrderModel>
                 ? _value.paymentStatus
                 : paymentStatus // ignore: cast_nullable_to_non_nullable
                       as String,
-            paymentMethod: freezed == paymentMethod
-                ? _value.paymentMethod
-                : paymentMethod // ignore: cast_nullable_to_non_nullable
-                      as String?,
             subtotal: null == subtotal
                 ? _value.subtotal
                 : subtotal // ignore: cast_nullable_to_non_nullable
@@ -261,7 +253,6 @@ abstract class _$$OrderModelImplCopyWith<$Res>
     @JsonKey(name: 'customer_phone') String? customerPhone,
     String status,
     @JsonKey(name: 'payment_status') String paymentStatus,
-    @JsonKey(name: 'payment_method') String? paymentMethod,
     int subtotal,
     int discount,
     @JsonKey(name: 'shipping_cost') int shippingCost,
@@ -301,7 +292,6 @@ class __$$OrderModelImplCopyWithImpl<$Res>
     Object? customerPhone = freezed,
     Object? status = null,
     Object? paymentStatus = null,
-    Object? paymentMethod = freezed,
     Object? subtotal = null,
     Object? discount = null,
     Object? shippingCost = null,
@@ -348,10 +338,6 @@ class __$$OrderModelImplCopyWithImpl<$Res>
             ? _value.paymentStatus
             : paymentStatus // ignore: cast_nullable_to_non_nullable
                   as String,
-        paymentMethod: freezed == paymentMethod
-            ? _value.paymentMethod
-            : paymentMethod // ignore: cast_nullable_to_non_nullable
-                  as String?,
         subtotal: null == subtotal
             ? _value.subtotal
             : subtotal // ignore: cast_nullable_to_non_nullable
@@ -428,7 +414,6 @@ class _$OrderModelImpl extends _OrderModel {
     @JsonKey(name: 'customer_phone') this.customerPhone,
     this.status = 'pending',
     @JsonKey(name: 'payment_status') this.paymentStatus = 'pending',
-    @JsonKey(name: 'payment_method') this.paymentMethod,
     required this.subtotal,
     this.discount = 0,
     @JsonKey(name: 'shipping_cost') this.shippingCost = 0,
@@ -470,9 +455,7 @@ class _$OrderModelImpl extends _OrderModel {
   @override
   @JsonKey(name: 'payment_status')
   final String paymentStatus;
-  @override
-  @JsonKey(name: 'payment_method')
-  final String? paymentMethod;
+  // @JsonKey(name: 'payment_method') String? paymentMethod, // Ya no se usa, Stripe maneja el pago
   @override
   final int subtotal;
   @override
@@ -524,7 +507,7 @@ class _$OrderModelImpl extends _OrderModel {
 
   @override
   String toString() {
-    return 'OrderModel(id: $id, userId: $userId, customerEmail: $customerEmail, customerName: $customerName, customerPhone: $customerPhone, status: $status, paymentStatus: $paymentStatus, paymentMethod: $paymentMethod, subtotal: $subtotal, discount: $discount, shippingCost: $shippingCost, total: $total, shippingAddress: $shippingAddress, shippingCity: $shippingCity, shippingPostalCode: $shippingPostalCode, billingAddress: $billingAddress, notes: $notes, trackingNumber: $trackingNumber, items: $items, createdAt: $createdAt, updatedAt: $updatedAt, shippedAt: $shippedAt, deliveredAt: $deliveredAt)';
+    return 'OrderModel(id: $id, userId: $userId, customerEmail: $customerEmail, customerName: $customerName, customerPhone: $customerPhone, status: $status, paymentStatus: $paymentStatus, subtotal: $subtotal, discount: $discount, shippingCost: $shippingCost, total: $total, shippingAddress: $shippingAddress, shippingCity: $shippingCity, shippingPostalCode: $shippingPostalCode, billingAddress: $billingAddress, notes: $notes, trackingNumber: $trackingNumber, items: $items, createdAt: $createdAt, updatedAt: $updatedAt, shippedAt: $shippedAt, deliveredAt: $deliveredAt)';
   }
 
   @override
@@ -543,8 +526,6 @@ class _$OrderModelImpl extends _OrderModel {
             (identical(other.status, status) || other.status == status) &&
             (identical(other.paymentStatus, paymentStatus) ||
                 other.paymentStatus == paymentStatus) &&
-            (identical(other.paymentMethod, paymentMethod) ||
-                other.paymentMethod == paymentMethod) &&
             (identical(other.subtotal, subtotal) ||
                 other.subtotal == subtotal) &&
             (identical(other.discount, discount) ||
@@ -585,7 +566,6 @@ class _$OrderModelImpl extends _OrderModel {
     customerPhone,
     status,
     paymentStatus,
-    paymentMethod,
     subtotal,
     discount,
     shippingCost,
@@ -626,7 +606,6 @@ abstract class _OrderModel extends OrderModel {
     @JsonKey(name: 'customer_phone') final String? customerPhone,
     final String status,
     @JsonKey(name: 'payment_status') final String paymentStatus,
-    @JsonKey(name: 'payment_method') final String? paymentMethod,
     required final int subtotal,
     final int discount,
     @JsonKey(name: 'shipping_cost') final int shippingCost,
@@ -666,10 +645,7 @@ abstract class _OrderModel extends OrderModel {
   String get status;
   @override
   @JsonKey(name: 'payment_status')
-  String get paymentStatus;
-  @override
-  @JsonKey(name: 'payment_method')
-  String? get paymentMethod;
+  String get paymentStatus; // @JsonKey(name: 'payment_method') String? paymentMethod, // Ya no se usa, Stripe maneja el pago
   @override
   int get subtotal;
   @override

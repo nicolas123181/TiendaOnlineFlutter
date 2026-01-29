@@ -53,7 +53,7 @@ class ProductRepositoryImpl implements ProductRepository {
       }
 
       if (onlyFeatured == true) {
-        query = query.eq('is_featured', true);
+        query = query.eq('featured', true);
       }
 
       // Ordenamiento y paginación
@@ -182,7 +182,7 @@ class ProductRepositoryImpl implements ProductRepository {
         'stock': product.stock,
         'category_id': product.categoryId,
         'images': product.images,
-        'is_featured': product.isFeatured,
+        'featured': product.featured,
       };
 
       final response = await _client.from('products').insert(data).select('''
@@ -213,7 +213,7 @@ class ProductRepositoryImpl implements ProductRepository {
         'stock': product.stock,
         'category_id': product.categoryId,
         'images': product.images,
-        'is_featured': product.isFeatured,
+        'featured': product.featured,
       };
 
       final response = await _client

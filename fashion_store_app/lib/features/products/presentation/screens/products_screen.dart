@@ -6,6 +6,7 @@ import '../../../../config/theme/app_colors.dart';
 import '../../../../config/theme/app_text_styles.dart';
 import '../../../../shared/widgets/loaders.dart';
 import '../../../../shared/widgets/empty_states.dart';
+import '../../../../shared/widgets/custom_app_bar.dart';
 import '../providers/products_provider.dart';
 import '../widgets/product_card.dart';
 
@@ -36,17 +37,12 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
     final productsAsync = ref.watch(productsProvider(filter));
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          widget.categorySlug != null
-              ? widget.categorySlug!.toUpperCase()
-              : 'TIENDA',
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.search),
-            onPressed: () => _showSearchSheet(context),
-          ),
+      appBar: CustomAppBar(
+        title: widget.categorySlug != null
+            ? widget.categorySlug!.toUpperCase()
+            : 'TIENDA',
+        onSearchPressed: () => _showSearchSheet(context),
+        additionalActions: [
           IconButton(
             icon: const Icon(Icons.filter_list),
             onPressed: () => _showFilterSheet(context),
@@ -74,7 +70,7 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
               padding: const EdgeInsets.all(16),
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2,
-                childAspectRatio: 0.65,
+                childAspectRatio: 0.7,
                 crossAxisSpacing: 12,
                 mainAxisSpacing: 16,
               ),

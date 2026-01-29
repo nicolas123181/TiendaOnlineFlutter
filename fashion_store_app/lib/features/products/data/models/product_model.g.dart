@@ -17,7 +17,7 @@ _$ProductModelImpl _$$ProductModelImplFromJson(Map<String, dynamic> json) =>
       salePrice: (json['sale_price'] as num?)?.toInt(),
       stock: (json['stock'] as num?)?.toInt() ?? 0,
       isOnSale: json['is_on_sale'] as bool? ?? false,
-      isFeatured: json['is_featured'] as bool? ?? false,
+      featured: json['featured'] as bool? ?? false,
       imageUrl: json['image_url'] as String?,
       images:
           (json['images'] as List<dynamic>?)
@@ -47,7 +47,7 @@ Map<String, dynamic> _$$ProductModelImplToJson(_$ProductModelImpl instance) =>
       'sale_price': instance.salePrice,
       'stock': instance.stock,
       'is_on_sale': instance.isOnSale,
-      'is_featured': instance.isFeatured,
+      'featured': instance.featured,
       'image_url': instance.imageUrl,
       'images': instance.images,
       'category_id': instance.categoryId,

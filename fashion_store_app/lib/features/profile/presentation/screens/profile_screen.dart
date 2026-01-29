@@ -147,12 +147,6 @@ class _ProfileContent extends ConsumerWidget {
             subtitle: 'Gestionar direcciones de envío',
             onTap: () => context.push('/addresses'),
           ),
-          _MenuItem(
-            icon: Icons.credit_card_outlined,
-            title: 'Métodos de Pago',
-            subtitle: 'Gestionar tarjetas',
-            onTap: () {},
-          ),
           const SizedBox(height: 24),
 
           // Cerrar sesión

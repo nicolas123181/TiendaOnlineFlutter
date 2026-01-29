@@ -33,8 +33,7 @@ mixin _$ProductModel {
   int get stock => throw _privateConstructorUsedError;
   @JsonKey(name: 'is_on_sale')
   bool get isOnSale => throw _privateConstructorUsedError;
-  @JsonKey(name: 'is_featured')
-  bool get isFeatured => throw _privateConstructorUsedError;
+  bool get featured => throw _privateConstructorUsedError;
   @JsonKey(name: 'image_url')
   String? get imageUrl => throw _privateConstructorUsedError;
   List<String> get images => throw _privateConstructorUsedError;
@@ -73,7 +72,7 @@ abstract class $ProductModelCopyWith<$Res> {
     @JsonKey(name: 'sale_price') int? salePrice,
     int stock,
     @JsonKey(name: 'is_on_sale') bool isOnSale,
-    @JsonKey(name: 'is_featured') bool isFeatured,
+    bool featured,
     @JsonKey(name: 'image_url') String? imageUrl,
     List<String> images,
     @JsonKey(name: 'category_id') int? categoryId,
@@ -109,7 +108,7 @@ class _$ProductModelCopyWithImpl<$Res, $Val extends ProductModel>
     Object? salePrice = freezed,
     Object? stock = null,
     Object? isOnSale = null,
-    Object? isFeatured = null,
+    Object? featured = null,
     Object? imageUrl = freezed,
     Object? images = null,
     Object? categoryId = freezed,
@@ -155,9 +154,9 @@ class _$ProductModelCopyWithImpl<$Res, $Val extends ProductModel>
                 ? _value.isOnSale
                 : isOnSale // ignore: cast_nullable_to_non_nullable
                       as bool,
-            isFeatured: null == isFeatured
-                ? _value.isFeatured
-                : isFeatured // ignore: cast_nullable_to_non_nullable
+            featured: null == featured
+                ? _value.featured
+                : featured // ignore: cast_nullable_to_non_nullable
                       as bool,
             imageUrl: freezed == imageUrl
                 ? _value.imageUrl
@@ -222,7 +221,7 @@ abstract class _$$ProductModelImplCopyWith<$Res>
     @JsonKey(name: 'sale_price') int? salePrice,
     int stock,
     @JsonKey(name: 'is_on_sale') bool isOnSale,
-    @JsonKey(name: 'is_featured') bool isFeatured,
+    bool featured,
     @JsonKey(name: 'image_url') String? imageUrl,
     List<String> images,
     @JsonKey(name: 'category_id') int? categoryId,
@@ -258,7 +257,7 @@ class __$$ProductModelImplCopyWithImpl<$Res>
     Object? salePrice = freezed,
     Object? stock = null,
     Object? isOnSale = null,
-    Object? isFeatured = null,
+    Object? featured = null,
     Object? imageUrl = freezed,
     Object? images = null,
     Object? categoryId = freezed,
@@ -304,9 +303,9 @@ class __$$ProductModelImplCopyWithImpl<$Res>
             ? _value.isOnSale
             : isOnSale // ignore: cast_nullable_to_non_nullable
                   as bool,
-        isFeatured: null == isFeatured
-            ? _value.isFeatured
-            : isFeatured // ignore: cast_nullable_to_non_nullable
+        featured: null == featured
+            ? _value.featured
+            : featured // ignore: cast_nullable_to_non_nullable
                   as bool,
         imageUrl: freezed == imageUrl
             ? _value.imageUrl
@@ -350,7 +349,7 @@ class _$ProductModelImpl extends _ProductModel {
     @JsonKey(name: 'sale_price') this.salePrice,
     this.stock = 0,
     @JsonKey(name: 'is_on_sale') this.isOnSale = false,
-    @JsonKey(name: 'is_featured') this.isFeatured = false,
+    this.featured = false,
     @JsonKey(name: 'image_url') this.imageUrl,
     final List<String> images = const <String>[],
     @JsonKey(name: 'category_id') this.categoryId,
@@ -386,8 +385,8 @@ class _$ProductModelImpl extends _ProductModel {
   @JsonKey(name: 'is_on_sale')
   final bool isOnSale;
   @override
-  @JsonKey(name: 'is_featured')
-  final bool isFeatured;
+  @JsonKey()
+  final bool featured;
   @override
   @JsonKey(name: 'image_url')
   final String? imageUrl;
@@ -414,7 +413,7 @@ class _$ProductModelImpl extends _ProductModel {
 
   @override
   String toString() {
-    return 'ProductModel(id: $id, name: $name, slug: $slug, description: $description, shortDescription: $shortDescription, price: $price, salePrice: $salePrice, stock: $stock, isOnSale: $isOnSale, isFeatured: $isFeatured, imageUrl: $imageUrl, images: $images, categoryId: $categoryId, category: $category, createdAt: $createdAt, updatedAt: $updatedAt)';
+    return 'ProductModel(id: $id, name: $name, slug: $slug, description: $description, shortDescription: $shortDescription, price: $price, salePrice: $salePrice, stock: $stock, isOnSale: $isOnSale, featured: $featured, imageUrl: $imageUrl, images: $images, categoryId: $categoryId, category: $category, createdAt: $createdAt, updatedAt: $updatedAt)';
   }
 
   @override
@@ -435,8 +434,8 @@ class _$ProductModelImpl extends _ProductModel {
             (identical(other.stock, stock) || other.stock == stock) &&
             (identical(other.isOnSale, isOnSale) ||
                 other.isOnSale == isOnSale) &&
-            (identical(other.isFeatured, isFeatured) ||
-                other.isFeatured == isFeatured) &&
+            (identical(other.featured, featured) ||
+                other.featured == featured) &&
             (identical(other.imageUrl, imageUrl) ||
                 other.imageUrl == imageUrl) &&
             const DeepCollectionEquality().equals(other._images, _images) &&
@@ -463,7 +462,7 @@ class _$ProductModelImpl extends _ProductModel {
     salePrice,
     stock,
     isOnSale,
-    isFeatured,
+    featured,
     imageUrl,
     const DeepCollectionEquality().hash(_images),
     categoryId,
@@ -497,7 +496,7 @@ abstract class _ProductModel extends ProductModel {
     @JsonKey(name: 'sale_price') final int? salePrice,
     final int stock,
     @JsonKey(name: 'is_on_sale') final bool isOnSale,
-    @JsonKey(name: 'is_featured') final bool isFeatured,
+    final bool featured,
     @JsonKey(name: 'image_url') final String? imageUrl,
     final List<String> images,
     @JsonKey(name: 'category_id') final int? categoryId,
@@ -532,8 +531,7 @@ abstract class _ProductModel extends ProductModel {
   @JsonKey(name: 'is_on_sale')
   bool get isOnSale;
   @override
-  @JsonKey(name: 'is_featured')
-  bool get isFeatured;
+  bool get featured;
   @override
   @JsonKey(name: 'image_url')
   String? get imageUrl;

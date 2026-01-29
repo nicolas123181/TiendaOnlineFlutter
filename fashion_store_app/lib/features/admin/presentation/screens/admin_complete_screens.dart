@@ -892,7 +892,7 @@ class _ReceivedReturnCard extends StatelessWidget {
                     .map(
                       (item) => Chip(
                         label: Text(
-                          '${item.productName}',
+                          item.productName,
                           style: const TextStyle(fontSize: 11),
                         ),
                         backgroundColor: Colors.grey[200],
@@ -1389,7 +1389,7 @@ class _AdminSettingsScreenCompleteState
                             );
                           }
                         },
-                        activeColor: Colors.amber[600],
+                        activeThumbColor: Colors.amber[600],
                       ),
                       loading: () => const CircularProgressIndicator(),
                       error: (_, __) => const Icon(Icons.error),

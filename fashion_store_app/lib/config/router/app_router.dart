@@ -9,8 +9,8 @@ import '../theme/app_text_styles.dart';
 import '../../features/home/presentation/screens/home_screen.dart';
 import '../../features/products/presentation/screens/products_screen.dart';
 import '../../features/products/presentation/screens/product_detail_screen.dart';
+import '../../features/products/presentation/screens/size_guide_screen.dart';
 import '../../features/cart/presentation/screens/cart_screen.dart';
-import '../../features/checkout/presentation/screens/checkout_screen.dart';
 import '../../features/checkout/presentation/screens/checkout_success_screen.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
@@ -21,6 +21,7 @@ import '../../features/favorites/presentation/screens/favorites_screen.dart';
 import '../../features/categories/presentation/screens/categories_screen.dart';
 import '../../features/orders/presentation/screens/orders_screen.dart';
 import '../../features/orders/presentation/screens/order_detail_screen.dart';
+import '../../features/orders/presentation/screens/invoice_screen.dart';
 import '../../features/profile/presentation/screens/addresses_screen.dart';
 import '../../features/admin/presentation/screens/admin_screens.dart';
 import '../../features/admin/presentation/screens/admin_additional_screens.dart';
@@ -169,6 +170,17 @@ final routerProvider = Provider<GoRouter>((ref) {
         },
       ),
 
+      // Guía de tallas
+      GoRoute(
+        path: '/size-guide',
+        name: 'sizeGuide',
+        pageBuilder: (context, state) => CustomTransitionPage(
+          key: state.pageKey,
+          child: const SizeGuideScreen(),
+          transitionsBuilder: _slideTransition,
+        ),
+      ),
+
       // Categoría específica
       GoRoute(
         path: '/category/:slug',
@@ -200,7 +212,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: 'checkout',
         pageBuilder: (context, state) => CustomTransitionPage(
           key: state.pageKey,
-          child: const CheckoutScreen(),
+          child: const CompleteCheckoutScreen(),
           transitionsBuilder: _slideTransition,
         ),
         routes: [
@@ -355,6 +367,16 @@ final routerProvider = Provider<GoRouter>((ref) {
             },
           ),
         ],
+      ),
+
+      // Factura de pedido
+      GoRoute(
+        path: '/invoice/:orderId',
+        name: 'invoice',
+        builder: (context, state) {
+          final orderId = int.parse(state.pathParameters['orderId']!);
+          return InvoiceScreen(orderId: orderId);
+        },
       ),
 
       // Direcciones del usuario

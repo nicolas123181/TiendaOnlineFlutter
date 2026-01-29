@@ -38,7 +38,14 @@ class _AddToCartButtonState extends ConsumerState<AddToCartButton>
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
 
-  static const List<String> _availableSizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
+  static const List<String> _availableSizes = [
+    'XS',
+    'S',
+    'M',
+    'L',
+    'XL',
+    'XXL',
+  ];
 
   @override
   void initState() {
@@ -60,7 +67,8 @@ class _AddToCartButtonState extends ConsumerState<AddToCartButton>
   }
 
   int _getMaxQuantityForSize(Map<String, int>? sizesStock) {
-    if (_selectedSize == null || sizesStock == null) return widget.product.stock;
+    if (_selectedSize == null || sizesStock == null)
+      return widget.product.stock;
     return sizesStock[_selectedSize] ?? 0;
   }
 
@@ -77,11 +85,13 @@ class _AddToCartButtonState extends ConsumerState<AddToCartButton>
 
     _animationController.forward().then((_) => _animationController.reverse());
 
-    ref.read(cartProvider.notifier).addItem(
-      product: widget.product,
-      size: _selectedSize ?? 'Única',
-      quantity: _quantity,
-    );
+    ref
+        .read(cartProvider.notifier)
+        .addItem(
+          product: widget.product,
+          size: _selectedSize ?? 'Única',
+          quantity: _quantity,
+        );
 
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
@@ -119,8 +129,10 @@ class _AddToCartButtonState extends ConsumerState<AddToCartButton>
 
   @override
   Widget build(BuildContext context) {
-    final sizesStockAsync = ref.watch(productSizesMapProvider(widget.product.id));
-    
+    final sizesStockAsync = ref.watch(
+      productSizesMapProvider(widget.product.id),
+    );
+
     return sizesStockAsync.when(
       data: (sizesStock) => _buildContent(sizesStock),
       loading: () => _buildContent(null),
@@ -162,7 +174,7 @@ class _AddToCartButtonState extends ConsumerState<AddToCartButton>
               final isSelected = _selectedSize == size;
               final isAvailable = stockForSize > 0;
               final isLowStock = stockForSize > 0 && stockForSize <= 3;
-              
+
               return GestureDetector(
                 onTap: isAvailable
                     ? () {
@@ -180,19 +192,19 @@ class _AddToCartButtonState extends ConsumerState<AddToCartButton>
                   width: 52,
                   height: 52,
                   decoration: BoxDecoration(
-                    color: !isAvailable 
+                    color: !isAvailable
                         ? AppColors.backgroundSecondary
-                        : isSelected 
-                            ? AppColors.primary 
-                            : AppColors.surface,
+                        : isSelected
+                        ? AppColors.primary
+                        : AppColors.surface,
                     border: Border.all(
                       color: !isAvailable
                           ? AppColors.border
-                          : isSelected 
-                              ? AppColors.primary 
-                              : isLowStock
-                                  ? AppColors.warning
-                                  : AppColors.border,
+                          : isSelected
+                          ? AppColors.primary
+                          : isLowStock
+                          ? AppColors.warning
+                          : AppColors.border,
                       width: isSelected || isLowStock ? 2 : 1,
                     ),
                     borderRadius: BorderRadius.circular(8),
@@ -208,18 +220,24 @@ class _AddToCartButtonState extends ConsumerState<AddToCartButton>
                             style: AppTextStyles.labelMedium.copyWith(
                               color: !isAvailable
                                   ? AppColors.textSecondary
-                                  : isSelected 
-                                      ? Colors.white 
-                                      : AppColors.primary,
-                              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                              decoration: !isAvailable ? TextDecoration.lineThrough : null,
+                                  : isSelected
+                                  ? Colors.white
+                                  : AppColors.primary,
+                              fontWeight: isSelected
+                                  ? FontWeight.w600
+                                  : FontWeight.w400,
+                              decoration: !isAvailable
+                                  ? TextDecoration.lineThrough
+                                  : null,
                             ),
                           ),
                           if (isAvailable && isLowStock)
                             Text(
                               '($stockForSize)',
                               style: AppTextStyles.caption.copyWith(
-                                color: isSelected ? Colors.white70 : AppColors.warning,
+                                color: isSelected
+                                    ? Colors.white70
+                                    : AppColors.warning,
                                 fontSize: 10,
                               ),
                             ),
@@ -233,7 +251,7 @@ class _AddToCartButtonState extends ConsumerState<AddToCartButton>
                           child: Container(
                             padding: const EdgeInsets.all(2),
                             decoration: BoxDecoration(
-                              color: AppColors.error.withOpacity(0.1),
+                              color: AppColors.error.withValues(alpha: 0.1),
                               shape: BoxShape.circle,
                             ),
                             child: Icon(
@@ -250,23 +268,32 @@ class _AddToCartButtonState extends ConsumerState<AddToCartButton>
             }).toList(),
           ),
           const SizedBox(height: 12),
-          
+
           // Aviso de pocas unidades
-          if (_selectedSize != null) 
+          if (_selectedSize != null)
             Builder(
               builder: (context) {
                 final stockForSelected = sizesStock?[_selectedSize] ?? 0;
                 if (stockForSelected > 0 && stockForSelected <= 5) {
                   return Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
                     decoration: BoxDecoration(
-                      color: AppColors.warning.withOpacity(0.1),
+                      color: AppColors.warning.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: AppColors.warning.withOpacity(0.3)),
+                      border: Border.all(
+                        color: AppColors.warning.withValues(alpha: 0.3),
+                      ),
                     ),
                     child: Row(
                       children: [
-                        Icon(Icons.local_fire_department, color: AppColors.warning, size: 20),
+                        Icon(
+                          Icons.local_fire_department,
+                          color: AppColors.warning,
+                          size: 20,
+                        ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
@@ -309,18 +336,22 @@ class _AddToCartButtonState extends ConsumerState<AddToCartButton>
             text: widget.product.isOutOfStock
                 ? 'Agotado'
                 : (_selectedSize == null && widget.showSizeSelector)
-                    ? 'Selecciona una talla'
-                    : _getMaxQuantityForSize(sizesStock) <= 0
-                        ? 'Talla agotada'
-                        : _isAdding
-                            ? 'Añadiendo...'
-                            : 'Añadir al carrito',
-            icon: widget.product.isOutOfStock || _getMaxQuantityForSize(sizesStock) <= 0
+                ? 'Selecciona una talla'
+                : _getMaxQuantityForSize(sizesStock) <= 0
+                ? 'Talla agotada'
+                : _isAdding
+                ? 'Añadiendo...'
+                : 'Añadir al carrito',
+            icon:
+                widget.product.isOutOfStock ||
+                    _getMaxQuantityForSize(sizesStock) <= 0
                 ? Icons.block
                 : _isAdding
-                    ? null
-                    : Icons.shopping_bag_outlined,
-            onPressed: _canAddToCart(sizesStock) ? () => _handleAddToCart(sizesStock) : null,
+                ? null
+                : Icons.shopping_bag_outlined,
+            onPressed: _canAddToCart(sizesStock)
+                ? () => _handleAddToCart(sizesStock)
+                : null,
             isLoading: _isAdding,
           ),
         ),
@@ -332,7 +363,9 @@ class _AddToCartButtonState extends ConsumerState<AddToCartButton>
     return ScaleTransition(
       scale: _scaleAnimation,
       child: CustomIconButton(
-        icon: widget.product.isOutOfStock ? Icons.block : Icons.add_shopping_cart,
+        icon: widget.product.isOutOfStock
+            ? Icons.block
+            : Icons.add_shopping_cart,
         onPressed: widget.product.isInStock
             ? () => _showAddToCartSheet(context, sizesStock)
             : null,
@@ -393,8 +426,15 @@ class _AddToCartSheet extends StatefulWidget {
 class _AddToCartSheetState extends State<_AddToCartSheet> {
   String? _selectedSize;
   int _quantity = 1;
-  
-  static const List<String> _availableSizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
+
+  static const List<String> _availableSizes = [
+    'XS',
+    'S',
+    'M',
+    'L',
+    'XL',
+    'XXL',
+  ];
 
   int get _maxQuantity {
     if (_selectedSize == null) return 0;
@@ -499,7 +539,7 @@ class _AddToCartSheetState extends State<_AddToCartSheet> {
               final isSelected = _selectedSize == size;
               final isAvailable = stockForSize > 0;
               final isLowStock = stockForSize > 0 && stockForSize <= 3;
-              
+
               return GestureDetector(
                 onTap: isAvailable
                     ? () {
@@ -515,19 +555,19 @@ class _AddToCartSheetState extends State<_AddToCartSheet> {
                   width: 48,
                   height: 48,
                   decoration: BoxDecoration(
-                    color: !isAvailable 
+                    color: !isAvailable
                         ? AppColors.backgroundSecondary
-                        : isSelected 
-                            ? AppColors.primary 
-                            : AppColors.surface,
+                        : isSelected
+                        ? AppColors.primary
+                        : AppColors.surface,
                     border: Border.all(
                       color: !isAvailable
                           ? AppColors.border
-                          : isSelected 
-                              ? AppColors.primary 
-                              : isLowStock
-                                  ? AppColors.warning
-                                  : AppColors.border,
+                          : isSelected
+                          ? AppColors.primary
+                          : isLowStock
+                          ? AppColors.warning
+                          : AppColors.border,
                     ),
                     borderRadius: BorderRadius.circular(8),
                   ),
@@ -539,18 +579,22 @@ class _AddToCartSheetState extends State<_AddToCartSheet> {
                         style: TextStyle(
                           color: !isAvailable
                               ? AppColors.textSecondary
-                              : isSelected 
-                                  ? Colors.white 
-                                  : AppColors.primary,
+                              : isSelected
+                              ? Colors.white
+                              : AppColors.primary,
                           fontWeight: FontWeight.w500,
-                          decoration: !isAvailable ? TextDecoration.lineThrough : null,
+                          decoration: !isAvailable
+                              ? TextDecoration.lineThrough
+                              : null,
                         ),
                       ),
                       if (isAvailable && isLowStock)
                         Text(
                           '($stockForSize)',
                           style: TextStyle(
-                            color: isSelected ? Colors.white70 : AppColors.warning,
+                            color: isSelected
+                                ? Colors.white70
+                                : AppColors.warning,
                             fontSize: 9,
                           ),
                         ),
@@ -560,19 +604,25 @@ class _AddToCartSheetState extends State<_AddToCartSheet> {
               );
             }).toList(),
           ),
-          
+
           // Aviso de pocas unidades
-          if (_selectedSize != null && _maxQuantity > 0 && _maxQuantity <= 5) ...[
+          if (_selectedSize != null &&
+              _maxQuantity > 0 &&
+              _maxQuantity <= 5) ...[
             const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: AppColors.warning.withOpacity(0.1),
+                color: AppColors.warning.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
                 children: [
-                  Icon(Icons.local_fire_department, color: AppColors.warning, size: 16),
+                  Icon(
+                    Icons.local_fire_department,
+                    color: AppColors.warning,
+                    size: 16,
+                  ),
                   const SizedBox(width: 8),
                   Text(
                     _maxQuantity == 1
@@ -587,7 +637,7 @@ class _AddToCartSheetState extends State<_AddToCartSheet> {
               ),
             ),
           ],
-          
+
           const SizedBox(height: 24),
 
           // Botón
@@ -604,7 +654,7 @@ class _AddToCartSheetState extends State<_AddToCartSheet> {
       ),
     );
   }
-  
+
   void _showSizeGuide(BuildContext context) {
     Navigator.pop(context);
     showModalBottomSheet(
@@ -692,7 +742,8 @@ class SizeGuideSheet extends StatefulWidget {
   State<SizeGuideSheet> createState() => _SizeGuideSheetState();
 }
 
-class _SizeGuideSheetState extends State<SizeGuideSheet> with SingleTickerProviderStateMixin {
+class _SizeGuideSheetState extends State<SizeGuideSheet>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
   String _selectedCategory = 'tops';
 
@@ -749,7 +800,7 @@ class _SizeGuideSheetState extends State<SizeGuideSheet> with SingleTickerProvid
             ),
           ),
           const SizedBox(height: 20),
-          
+
           // Título
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -764,7 +815,7 @@ class _SizeGuideSheetState extends State<SizeGuideSheet> with SingleTickerProvid
               ],
             ),
           ),
-          
+
           // Tabs
           TabBar(
             controller: _tabController,
@@ -781,18 +832,15 @@ class _SizeGuideSheetState extends State<SizeGuideSheet> with SingleTickerProvid
               });
             },
           ),
-          
+
           // Contenido
           Expanded(
             child: TabBarView(
               controller: _tabController,
-              children: [
-                _buildSizeTable('tops'),
-                _buildSizeTable('bottoms'),
-              ],
+              children: [_buildSizeTable('tops'), _buildSizeTable('bottoms')],
             ),
           ),
-          
+
           // Cómo medirse
           Padding(
             padding: const EdgeInsets.all(24),
@@ -806,7 +854,7 @@ class _SizeGuideSheetState extends State<SizeGuideSheet> with SingleTickerProvid
   Widget _buildSizeTable(String category) {
     final data = _sizeData[category]!;
     final isTop = category == 'tops';
-    
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -814,10 +862,12 @@ class _SizeGuideSheetState extends State<SizeGuideSheet> with SingleTickerProvid
         children: [
           Text(
             'Medidas en centímetros',
-            style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
+            style: AppTextStyles.bodySmall.copyWith(
+              color: AppColors.textSecondary,
+            ),
           ),
           const SizedBox(height: 16),
-          
+
           // Tabla
           Container(
             decoration: BoxDecoration(
@@ -830,14 +880,12 @@ class _SizeGuideSheetState extends State<SizeGuideSheet> with SingleTickerProvid
                 border: TableBorder.symmetric(
                   inside: BorderSide(color: AppColors.border),
                 ),
-                columnWidths: const {
-                  0: FixedColumnWidth(60),
-                },
+                columnWidths: const {0: FixedColumnWidth(60)},
                 children: [
                   // Header
                   TableRow(
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.1),
+                      color: AppColors.primary.withValues(alpha: 0.1),
                     ),
                     children: [
                       _tableCell('Talla', isHeader: true),
@@ -848,27 +896,29 @@ class _SizeGuideSheetState extends State<SizeGuideSheet> with SingleTickerProvid
                     ],
                   ),
                   // Data rows
-                  ...data.map((row) => TableRow(
-                    children: [
-                      _tableCell(row['size'], isSize: true),
-                      if (isTop) _tableCell(row['chest']),
-                      _tableCell(row['waist']),
-                      _tableCell(row['hip']),
-                      if (!isTop) _tableCell(row['inseam']),
-                    ],
-                  )),
+                  ...data.map(
+                    (row) => TableRow(
+                      children: [
+                        _tableCell(row['size'], isSize: true),
+                        if (isTop) _tableCell(row['chest']),
+                        _tableCell(row['waist']),
+                        _tableCell(row['hip']),
+                        if (!isTop) _tableCell(row['inseam']),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),
           ),
-          
+
           const SizedBox(height: 24),
-          
+
           // Consejo
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: AppColors.info.withOpacity(0.1),
+              color: AppColors.info.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
@@ -878,7 +928,9 @@ class _SizeGuideSheetState extends State<SizeGuideSheet> with SingleTickerProvid
                 Expanded(
                   child: Text(
                     'Si estás entre dos tallas, te recomendamos elegir la más grande para mayor comodidad.',
-                    style: AppTextStyles.bodySmall.copyWith(color: AppColors.info),
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: AppColors.info,
+                    ),
                   ),
                 ),
               ],
@@ -915,11 +967,23 @@ class _SizeGuideSheetState extends State<SizeGuideSheet> with SingleTickerProvid
         children: [
           Text('¿Cómo medirte?', style: AppTextStyles.labelLarge),
           const SizedBox(height: 12),
-          _measurementTip(Icons.accessibility_new, 'Pecho', 'Mide alrededor de la parte más ancha del pecho'),
+          _measurementTip(
+            Icons.accessibility_new,
+            'Pecho',
+            'Mide alrededor de la parte más ancha del pecho',
+          ),
           const SizedBox(height: 8),
-          _measurementTip(Icons.height, 'Cintura', 'Mide alrededor de la parte más estrecha de la cintura'),
+          _measurementTip(
+            Icons.height,
+            'Cintura',
+            'Mide alrededor de la parte más estrecha de la cintura',
+          ),
           const SizedBox(height: 8),
-          _measurementTip(Icons.fiber_manual_record_outlined, 'Cadera', 'Mide alrededor de la parte más ancha de las caderas'),
+          _measurementTip(
+            Icons.fiber_manual_record_outlined,
+            'Cadera',
+            'Mide alrededor de la parte más ancha de las caderas',
+          ),
         ],
       ),
     );
@@ -938,7 +1002,9 @@ class _SizeGuideSheetState extends State<SizeGuideSheet> with SingleTickerProvid
               Text(title, style: AppTextStyles.labelMedium),
               Text(
                 description,
-                style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary),
+                style: AppTextStyles.caption.copyWith(
+                  color: AppColors.textSecondary,
+                ),
               ),
             ],
           ),

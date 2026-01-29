@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -83,11 +84,21 @@ class _OrderDetailContent extends StatelessWidget {
           const SizedBox(height: 16),
 
           // Tracking (si hay)
-          if (order.trackingNumber != null && order.status == 'shipped')
+          if (order.trackingNumber != null && order.status == 'shipped') ...[
             _TrackingCard(order: order),
+            const SizedBox(height: 16),
+          ],
+
+          // Factura
+          if (order.status != 'pending' && order.status != 'cancelled')
+            _InvoiceCard(order: order),
 
           // Productos
           _ProductsCard(items: order.items),
+          const SizedBox(height: 16),
+
+          // Información de envío
+          _ShippingInfoCard(order: order),
           const SizedBox(height: 16),
 
           // Resumen del pedido
@@ -127,7 +138,7 @@ class _StatusCard extends StatelessWidget {
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: statusColor.withOpacity(0.1),
+                    color: statusColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
@@ -261,7 +272,7 @@ class _TrackingCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       elevation: 0,
-      color: AppColors.info.withOpacity(0.1),
+      color: AppColors.info.withValues(alpha: 0.1),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -500,6 +511,187 @@ class _SummaryRow extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Card de factura
+class _InvoiceCard extends StatelessWidget {
+  final UserOrder order;
+
+  const _InvoiceCard({required this.order});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 0,
+      color: Colors.blue.shade50,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: Colors.blue.shade200),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.shade100,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(Icons.receipt_long, color: Colors.blue.shade700),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Tu Factura', style: AppTextStyles.labelLarge),
+                      Text(
+                        'Factura disponible para este pedido',
+                        style: AppTextStyles.caption.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Puedes ver y descargar tu factura para este pedido. '
+              'La factura se genera automáticamente después de que el pago sea confirmado.',
+              style: AppTextStyles.bodySmall.copyWith(
+                color: AppColors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  // Navegar a pantalla de factura
+                  context.push('/invoice/${order.id}');
+                },
+                icon: const Icon(Icons.picture_as_pdf),
+                label: const Text('Ver Factura (PDF)'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue.shade600,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Card de información de envío
+class _ShippingInfoCard extends StatelessWidget {
+  final UserOrder order;
+
+  const _ShippingInfoCard({required this.order});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: AppColors.border),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.local_shipping, color: AppColors.primary),
+                const SizedBox(width: 12),
+                Text('Información de Envío', style: AppTextStyles.labelLarge),
+              ],
+            ),
+            const SizedBox(height: 16),
+            _InfoRow(
+              icon: Icons.person,
+              label: 'Destinatario',
+              value: order.customerName,
+            ),
+            const SizedBox(height: 8),
+            _InfoRow(
+              icon: Icons.email,
+              label: 'Email',
+              value: order.customerEmail,
+            ),
+            if (order.customerPhone != null) ...[
+              const SizedBox(height: 8),
+              _InfoRow(
+                icon: Icons.phone,
+                label: 'Teléfono',
+                value: order.customerPhone!,
+              ),
+            ],
+            const SizedBox(height: 8),
+            _InfoRow(
+              icon: Icons.location_on,
+              label: 'Dirección',
+              value:
+                  '${order.customerAddress}\n'
+                  '${order.customerPostalCode} ${order.customerCity}',
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _InfoRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+
+  const _InfoRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 18, color: AppColors.textSecondary),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: AppTextStyles.caption.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(value, style: AppTextStyles.bodyMedium),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

@@ -82,11 +82,13 @@ class ProductDetailScreen extends ConsumerWidget {
                         heroTagPrefix: null, // Desactivar Hero en galería
                       ),
 
-                      // Badges
+                      // Badges con restricción de ancho para prevenir overflow
                       Positioned(
                         bottom: 16,
                         left: 16,
+                        right: 16,
                         child: Row(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
                             if (product.isOnSale)
                               SaleBadge(
@@ -94,19 +96,23 @@ class ProductDetailScreen extends ConsumerWidget {
                               ),
                             if (product.isLowStock) ...[
                               const SizedBox(width: 8),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: AppColors.warning,
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: Text(
-                                  '¡Últimas unidades!',
-                                  style: AppTextStyles.badge.copyWith(
-                                    color: Colors.white,
+                              Flexible(
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.warning,
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text(
+                                    '¡Últimas unidades!',
+                                    style: AppTextStyles.badge.copyWith(
+                                      color: Colors.white,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
                               ),

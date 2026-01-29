@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
 import '../../../../shared/widgets/empty_states.dart';
+import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../../../config/theme/app_colors.dart';
 import '../../../../config/theme/app_text_styles.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
@@ -19,7 +20,7 @@ class FavoritesScreen extends ConsumerWidget {
 
     if (!isAuthenticated) {
       return Scaffold(
-        appBar: AppBar(title: const Text('FAVORITOS')),
+        appBar: const CustomAppBar(title: 'FAVORITOS'),
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(32),
@@ -52,13 +53,13 @@ class FavoritesScreen extends ConsumerWidget {
     final wishlistAsync = ref.watch(wishlistProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('FAVORITOS'),
-        actions: [
+      appBar: CustomAppBar(
+        title: 'FAVORITOS',
+        additionalActions: [
           wishlistAsync.when(
             data: (items) => items.isNotEmpty
                 ? Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
                     child: Center(
                       child: Text(
                         '${items.length}',

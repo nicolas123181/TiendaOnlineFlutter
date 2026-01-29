@@ -207,7 +207,7 @@ class _CreateCouponDialogState extends ConsumerState<_CreateCouponDialog> {
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
-                value: _discountType,
+                initialValue: _discountType,
                 decoration: const InputDecoration(
                   labelText: 'Tipo de descuento',
                   border: OutlineInputBorder(),

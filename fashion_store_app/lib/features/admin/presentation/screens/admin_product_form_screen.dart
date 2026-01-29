@@ -31,7 +31,7 @@ class _AdminProductFormScreenState
   bool _featured = false;
   DateTime? _saleEndsAt;
   List<String> _imageUrls = [];
-  List<XFile> _pendingImages = [];
+  final List<XFile> _pendingImages = [];
   Map<String, int> _sizeStock = {};
   bool _isLoading = false;
 
@@ -330,7 +330,7 @@ class _AdminProductFormScreenState
                     // Categoría
                     categoriesAsync.when(
                       data: (categories) => DropdownButtonFormField<int>(
-                        value: _selectedCategoryId,
+                        initialValue: _selectedCategoryId,
                         decoration: const InputDecoration(
                           labelText: 'Categoría *',
                           border: OutlineInputBorder(),

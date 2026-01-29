@@ -249,7 +249,7 @@ class InvoiceScreen extends ConsumerWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.05),
+              color: AppColors.primary.withValues(alpha: 0.05),
               borderRadius: const BorderRadius.vertical(
                 top: Radius.circular(11),
               ),
@@ -290,7 +290,9 @@ class InvoiceScreen extends ConsumerWidget {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
                 border: Border(
-                  bottom: BorderSide(color: AppColors.border.withOpacity(0.5)),
+                  bottom: BorderSide(
+                    color: AppColors.border.withValues(alpha: 0.5),
+                  ),
                 ),
               ),
               child: Row(
