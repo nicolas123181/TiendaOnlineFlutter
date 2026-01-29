@@ -1,7 +1,11 @@
 // Provider para administración de pedidos
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+
 import '../../../../shared/services/supabase_service.dart';
+import '../../../../config/constants/app_constants.dart';
 
 /// Provider para obtener lista de pedidos
 final ordersListProvider = FutureProvider<List<Map<String, dynamic>>>((
@@ -51,22 +55,63 @@ class OrderActions {
   }) async {
     final supabase = ref.read(supabaseClientProvider);
 
-    final updateData = <String, dynamic>{'status': newStatus};
+    // Obtener datos necesarios para el email
+    final order = await supabase
+        .from('orders')
+        .select('customer_email, customer_name')
+        .eq('id', orderId)
+        .single();
 
-    if (trackingNumber != null) {
-      updateData['tracking_number'] = trackingNumber;
-    }
+    String? carrierName;
+    String? trackingUrlTemplate;
 
     if (shippingCarrierId != null) {
-      updateData['shipping_carrier_id'] = shippingCarrierId;
+      final carrier = await supabase
+          .from('shipping_carriers')
+          .select('name, tracking_url_template')
+          .eq('id', shippingCarrierId)
+          .maybeSingle();
+      carrierName = carrier?['name'] as String?;
+      trackingUrlTemplate = carrier?['tracking_url_template'] as String?;
     }
 
-    // Actualizar fecha de envío si está listo o enviado
-    if (newStatus == 'shipped') {
-      updateData['shipped_at'] = DateTime.now().toIso8601String();
-    }
+    try {
+      final response = await http.post(
+        Uri.parse('${AppConstants.webApiBaseUrl}/api/admin/update-order-status'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'orderId': orderId,
+          'status': newStatus,
+          'customerEmail': order['customer_email'],
+          'customerName': order['customer_name'],
+          'carrierId': shippingCarrierId,
+          'carrierName': carrierName,
+          'trackingNumber': trackingNumber,
+          'trackingUrlTemplate': trackingUrlTemplate,
+        }),
+      );
 
-    await supabase.from('orders').update(updateData).eq('id', orderId);
+      if (response.statusCode != 200) {
+        throw Exception('Email API error: ${response.body}');
+      }
+    } catch (e) {
+      // Fallback: actualizar solo en Supabase si el API falla
+      final updateData = <String, dynamic>{'status': newStatus};
+
+      if (trackingNumber != null) {
+        updateData['tracking_number'] = trackingNumber;
+      }
+
+      if (shippingCarrierId != null) {
+        updateData['shipping_carrier_id'] = shippingCarrierId;
+      }
+
+      if (newStatus == 'shipped') {
+        updateData['shipped_at'] = DateTime.now().toIso8601String();
+      }
+
+      await supabase.from('orders').update(updateData).eq('id', orderId);
+    }
 
     // Invalidar el cache
     ref.invalidate(ordersListProvider);

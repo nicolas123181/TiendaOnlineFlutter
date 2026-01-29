@@ -31,6 +31,8 @@ class CustomButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     final child = isLoading
         ? SizedBox(
             height: 20,
@@ -38,7 +40,7 @@ class CustomButton extends StatelessWidget {
             child: CircularProgressIndicator(
               strokeWidth: 2,
               valueColor: AlwaysStoppedAnimation<Color>(
-                isOutlined ? AppColors.primary : AppColors.surface,
+                isOutlined ? colorScheme.primary : colorScheme.onPrimary,
               ),
             ),
           )
@@ -52,7 +54,9 @@ class CustomButton extends StatelessWidget {
                   size: 18,
                   color:
                       textColor ??
-                      (isOutlined ? AppColors.primary : AppColors.surface),
+                      (isOutlined
+                          ? colorScheme.primary
+                          : colorScheme.onPrimary),
                 ),
                 const SizedBox(width: 8),
               ],
@@ -61,7 +65,9 @@ class CustomButton extends StatelessWidget {
                 style: AppTextStyles.button.copyWith(
                   color:
                       textColor ??
-                      (isOutlined ? AppColors.primary : AppColors.surface),
+                      (isOutlined
+                          ? colorScheme.primary
+                          : colorScheme.onPrimary),
                 ),
               ),
             ],
@@ -76,8 +82,8 @@ class CustomButton extends StatelessWidget {
           style: OutlinedButton.styleFrom(
             side: BorderSide(
               color: onPressed == null
-                  ? AppColors.border
-                  : (backgroundColor ?? AppColors.primary),
+                  ? Theme.of(context).dividerColor
+                  : (backgroundColor ?? colorScheme.primary),
             ),
             padding:
                 padding ??
@@ -94,8 +100,8 @@ class CustomButton extends StatelessWidget {
       child: ElevatedButton(
         onPressed: isLoading ? null : onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor: backgroundColor ?? AppColors.primary,
-          disabledBackgroundColor: AppColors.border,
+          backgroundColor: backgroundColor ?? colorScheme.primary,
+          disabledBackgroundColor: Theme.of(context).dividerColor,
           padding:
               padding ??
               const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
@@ -131,6 +137,8 @@ class CustomIconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     Widget button = Container(
       width: size,
       height: size,
@@ -138,13 +146,13 @@ class CustomIconButton extends StatelessWidget {
         color: backgroundColor ?? Colors.transparent,
         borderRadius: BorderRadius.circular(size / 2),
         border: backgroundColor == null
-            ? Border.all(color: AppColors.border)
+            ? Border.all(color: Theme.of(context).dividerColor)
             : null,
       ),
       child: IconButton(
         icon: Icon(
           icon,
-          color: iconColor ?? AppColors.primary,
+          color: iconColor ?? colorScheme.onSurface,
           size: size * 0.5,
         ),
         onPressed: onPressed,
@@ -170,7 +178,9 @@ class CustomIconButton extends StatelessWidget {
               constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
               child: Text(
                 badgeCount! > 99 ? '99+' : badgeCount.toString(),
-                style: AppTextStyles.badge.copyWith(color: AppColors.primary),
+                style: AppTextStyles.badge.copyWith(
+                  color: colorScheme.onSecondary,
+                ),
                 textAlign: TextAlign.center,
               ),
             ),
@@ -202,6 +212,8 @@ class FavoriteButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return GestureDetector(
       onTap: onPressed,
       child: AnimatedSwitcher(
@@ -212,7 +224,9 @@ class FavoriteButton extends StatelessWidget {
         child: Icon(
           isFavorite ? Icons.favorite : Icons.favorite_border,
           key: ValueKey(isFavorite),
-          color: isFavorite ? AppColors.error : AppColors.textSecondary,
+          color: isFavorite
+              ? AppColors.error
+              : colorScheme.onSurface.withValues(alpha: 0.6),
           size: size,
         ),
       ),

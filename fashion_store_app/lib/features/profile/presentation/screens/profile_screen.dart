@@ -12,6 +12,8 @@ class ProfileScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     final userAsync = ref.watch(currentUserProvider);
 
     return Scaffold(
@@ -50,6 +52,8 @@ class ProfileScreen extends ConsumerWidget {
 class _NotLoggedInState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -59,19 +63,19 @@ class _NotLoggedInState extends StatelessWidget {
             Icon(
               Icons.person_outline,
               size: 80,
-              color: AppColors.textSecondary,
+              color: colorScheme.onSurface.withValues(alpha: 0.6),
             ),
             const SizedBox(height: 24),
             Text(
               'Inicia sesión para ver tu perfil',
-              style: AppTextStyles.h4,
+              style: textTheme.headlineSmall,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             Text(
               'Accede a tus pedidos, favoritos y más',
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: AppColors.textSecondary,
+              style: textTheme.bodyMedium?.copyWith(
+                color: colorScheme.onSurface.withValues(alpha: 0.7),
               ),
               textAlign: TextAlign.center,
             ),
@@ -105,6 +109,8 @@ class _ProfileContent extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -112,18 +118,18 @@ class _ProfileContent extends ConsumerWidget {
           // Avatar y nombre
           CircleAvatar(
             radius: 50,
-            backgroundColor: AppColors.primary,
+            backgroundColor: colorScheme.primary,
             child: Text(
               user.initials ?? user.email[0].toUpperCase(),
-              style: AppTextStyles.h2.copyWith(color: Colors.white),
+              style: AppTextStyles.h2.copyWith(color: colorScheme.onPrimary),
             ),
           ),
           const SizedBox(height: 16),
-          Text(user.displayName ?? user.email, style: AppTextStyles.h4),
+          Text(user.displayName ?? user.email, style: textTheme.headlineSmall),
           Text(
             user.email,
-            style: AppTextStyles.bodyMedium.copyWith(
-              color: AppColors.textSecondary,
+            style: textTheme.bodyMedium?.copyWith(
+              color: colorScheme.onSurface.withValues(alpha: 0.7),
             ),
           ),
           const SizedBox(height: 32),
@@ -184,11 +190,21 @@ class _MenuItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     return ListTile(
-      leading: Icon(icon, color: AppColors.primary),
-      title: Text(title, style: AppTextStyles.labelLarge),
-      subtitle: Text(subtitle, style: AppTextStyles.bodySmall),
-      trailing: const Icon(Icons.chevron_right),
+      leading: Icon(icon, color: colorScheme.primary),
+      title: Text(title, style: textTheme.labelLarge),
+      subtitle: Text(
+        subtitle,
+        style: textTheme.bodySmall?.copyWith(
+          color: colorScheme.onSurface.withValues(alpha: 0.7),
+        ),
+      ),
+      trailing: Icon(
+        Icons.chevron_right,
+        color: colorScheme.onSurface.withValues(alpha: 0.6),
+      ),
       onTap: onTap,
     );
   }

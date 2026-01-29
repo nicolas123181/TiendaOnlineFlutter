@@ -17,6 +17,7 @@ class OrderDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final textTheme = Theme.of(context).textTheme;
     final orderAsync = ref.watch(orderByIdProvider(orderId));
 
     return Scaffold(
@@ -35,10 +36,7 @@ class OrderDetailScreen extends ConsumerWidget {
             children: [
               Icon(Icons.error_outline, size: 48, color: AppColors.error),
               const SizedBox(height: 16),
-              Text(
-                'Error al cargar el pedido',
-                style: AppTextStyles.bodyMedium,
-              ),
+              Text('Error al cargar el pedido', style: textTheme.bodyMedium),
               const SizedBox(height: 8),
               ElevatedButton(
                 onPressed: () => ref.invalidate(orderByIdProvider(orderId)),
@@ -117,11 +115,13 @@ class _StatusCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: AppColors.border),
+        side: BorderSide(color: Theme.of(context).dividerColor),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -131,7 +131,7 @@ class _StatusCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Estado del pedido', style: AppTextStyles.labelLarge),
+                Text('Estado del pedido', style: textTheme.labelLarge),
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 12,
@@ -162,13 +162,13 @@ class _StatusCard extends StatelessWidget {
                 Icon(
                   Icons.calendar_today,
                   size: 16,
-                  color: AppColors.textSecondary,
+                  color: colorScheme.onSurface.withValues(alpha: 0.6),
                 ),
                 const SizedBox(width: 8),
                 Text(
                   'Realizado el ${DateFormat('dd MMMM yyyy, HH:mm', 'es_ES').format(order.createdAt)}',
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: AppColors.textSecondary,
+                  style: textTheme.labelSmall?.copyWith(
+                    color: colorScheme.onSurface.withValues(alpha: 0.7),
                   ),
                 ),
               ],
@@ -187,6 +187,7 @@ class _StatusTimeline extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final dividerColor = Theme.of(context).dividerColor;
     final statuses = [
       'pending',
       'paid',
@@ -211,7 +212,7 @@ class _StatusTimeline extends StatelessWidget {
                 height: 2,
                 color: !isCancelled && i < currentIndex
                     ? AppColors.success
-                    : AppColors.border,
+                    : dividerColor,
               ),
             ),
         ],
@@ -233,6 +234,7 @@ class _TimelineStep extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       width: 24,
       height: 24,
@@ -242,13 +244,13 @@ class _TimelineStep extends StatelessWidget {
             ? AppColors.error
             : isCompleted
             ? AppColors.success
-            : AppColors.surface,
+            : colorScheme.surface,
         border: Border.all(
           color: isCancelled
               ? AppColors.error
               : isCompleted
               ? AppColors.success
-              : AppColors.border,
+              : Theme.of(context).dividerColor,
           width: 2,
         ),
       ),
@@ -270,6 +272,8 @@ class _TrackingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     return Card(
       elevation: 0,
       color: AppColors.info.withValues(alpha: 0.1),
@@ -289,27 +293,27 @@ class _TrackingCard extends StatelessWidget {
                     children: [
                       Text(
                         'Número de seguimiento',
-                        style: AppTextStyles.labelMedium,
+                        style: textTheme.labelMedium,
                       ),
                       const SizedBox(height: 4),
                       Text(
                         order.trackingNumber!,
-                        style: AppTextStyles.bodyMedium.copyWith(
+                        style: textTheme.bodyMedium?.copyWith(
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                       if (order.carrier != null)
                         Text(
                           order.carrier!.name,
-                          style: AppTextStyles.caption.copyWith(
-                            color: AppColors.textSecondary,
+                          style: textTheme.labelSmall?.copyWith(
+                            color: colorScheme.onSurface.withValues(alpha: 0.7),
                           ),
                         ),
                     ],
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.copy),
+                  icon: Icon(Icons.copy, color: colorScheme.onSurface),
                   onPressed: () {
                     Clipboard.setData(
                       ClipboardData(text: order.trackingNumber!),
@@ -354,21 +358,20 @@ class _ProductsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: AppColors.border),
+        side: BorderSide(color: Theme.of(context).dividerColor),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Productos (${items.length})',
-              style: AppTextStyles.labelLarge,
-            ),
+            Text('Productos (${items.length})', style: textTheme.labelLarge),
             const SizedBox(height: 16),
             ...items.map(
               (item) => Padding(
@@ -379,12 +382,15 @@ class _ProductsCard extends StatelessWidget {
                       width: 50,
                       height: 50,
                       decoration: BoxDecoration(
-                        color: AppColors.backgroundSecondary,
+                        color: colorScheme.surface,
                         borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: Theme.of(context).dividerColor,
+                        ),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.shopping_bag_outlined,
-                        color: AppColors.textSecondary,
+                        color: colorScheme.onSurface.withValues(alpha: 0.6),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -394,27 +400,31 @@ class _ProductsCard extends StatelessWidget {
                         children: [
                           Text(
                             item.productName,
-                            style: AppTextStyles.labelMedium,
+                            style: textTheme.labelMedium,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
                           if (item.size != null)
                             Text(
                               'Talla: ${item.size}',
-                              style: AppTextStyles.caption.copyWith(
-                                color: AppColors.textSecondary,
+                              style: textTheme.labelSmall?.copyWith(
+                                color: colorScheme.onSurface.withValues(
+                                  alpha: 0.7,
+                                ),
                               ),
                             ),
                           Text(
                             'Cant: ${item.quantity} × ${item.formattedPrice}',
-                            style: AppTextStyles.caption.copyWith(
-                              color: AppColors.textSecondary,
+                            style: textTheme.labelSmall?.copyWith(
+                              color: colorScheme.onSurface.withValues(
+                                alpha: 0.7,
+                              ),
                             ),
                           ),
                         ],
                       ),
                     ),
-                    Text(item.formattedTotal, style: AppTextStyles.labelMedium),
+                    Text(item.formattedTotal, style: textTheme.labelMedium),
                   ],
                 ),
               ),
@@ -433,18 +443,20 @@ class _SummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: AppColors.border),
+        side: BorderSide(color: Theme.of(context).dividerColor),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Resumen del pedido', style: AppTextStyles.labelLarge),
+            Text('Resumen del pedido', style: textTheme.labelLarge),
             const SizedBox(height: 16),
             if (order.subtotal != null)
               _SummaryRow(
@@ -492,6 +504,8 @@ class _SummaryRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
@@ -499,15 +513,15 @@ class _SummaryRow extends StatelessWidget {
         children: [
           Text(
             label,
-            style: isBold ? AppTextStyles.labelLarge : AppTextStyles.bodyMedium,
+            style: isBold ? textTheme.labelLarge : textTheme.bodyMedium,
           ),
           Text(
             value,
             style: isBold
-                ? AppTextStyles.price
+                ? AppTextStyles.price.copyWith(color: colorScheme.onSurface)
                 : isDiscount
-                ? AppTextStyles.bodyMedium.copyWith(color: AppColors.success)
-                : AppTextStyles.bodyMedium,
+                ? textTheme.bodyMedium?.copyWith(color: AppColors.success)
+                : textTheme.bodyMedium,
           ),
         ],
       ),
@@ -523,12 +537,14 @@ class _InvoiceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     return Card(
       elevation: 0,
-      color: Colors.blue.shade50,
+      color: colorScheme.surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Colors.blue.shade200),
+        side: BorderSide(color: colorScheme.primary.withValues(alpha: 0.2)),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -540,10 +556,10 @@ class _InvoiceCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.blue.shade100,
+                    color: colorScheme.primary.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Icon(Icons.receipt_long, color: Colors.blue.shade700),
+                  child: Icon(Icons.receipt_long, color: colorScheme.primary),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -553,8 +569,8 @@ class _InvoiceCard extends StatelessWidget {
                       Text('Tu Factura', style: AppTextStyles.labelLarge),
                       Text(
                         'Factura disponible para este pedido',
-                        style: AppTextStyles.caption.copyWith(
-                          color: AppColors.textSecondary,
+                        style: textTheme.labelSmall?.copyWith(
+                          color: colorScheme.onSurface.withValues(alpha: 0.7),
                         ),
                       ),
                     ],
@@ -567,7 +583,7 @@ class _InvoiceCard extends StatelessWidget {
               'Puedes ver y descargar tu factura para este pedido. '
               'La factura se genera automáticamente después de que el pago sea confirmado.',
               style: AppTextStyles.bodySmall.copyWith(
-                color: AppColors.textSecondary,
+                color: colorScheme.onSurface.withValues(alpha: 0.7),
               ),
             ),
             const SizedBox(height: 16),
@@ -581,8 +597,8 @@ class _InvoiceCard extends StatelessWidget {
                 icon: const Icon(Icons.picture_as_pdf),
                 label: const Text('Ver Factura (PDF)'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue.shade600,
-                  foregroundColor: Colors.white,
+                  backgroundColor: colorScheme.primary,
+                  foregroundColor: colorScheme.onPrimary,
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
@@ -605,11 +621,13 @@ class _ShippingInfoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: AppColors.border),
+        side: BorderSide(color: Theme.of(context).dividerColor),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -618,9 +636,9 @@ class _ShippingInfoCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(Icons.local_shipping, color: AppColors.primary),
+                Icon(Icons.local_shipping, color: colorScheme.primary),
                 const SizedBox(width: 12),
-                Text('Información de Envío', style: AppTextStyles.labelLarge),
+                Text('Información de Envío', style: textTheme.labelLarge),
               ],
             ),
             const SizedBox(height: 16),
@@ -671,10 +689,16 @@ class _InfoRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 18, color: AppColors.textSecondary),
+        Icon(
+          icon,
+          size: 18,
+          color: colorScheme.onSurface.withValues(alpha: 0.6),
+        ),
         const SizedBox(width: 8),
         Expanded(
           child: Column(
@@ -682,12 +706,12 @@ class _InfoRow extends StatelessWidget {
             children: [
               Text(
                 label,
-                style: AppTextStyles.caption.copyWith(
-                  color: AppColors.textSecondary,
+                style: textTheme.labelSmall?.copyWith(
+                  color: colorScheme.onSurface.withValues(alpha: 0.7),
                 ),
               ),
               const SizedBox(height: 2),
-              Text(value, style: AppTextStyles.bodyMedium),
+              Text(value, style: textTheme.bodyMedium),
             ],
           ),
         ),

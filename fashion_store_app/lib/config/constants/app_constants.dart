@@ -78,7 +78,9 @@ class AppConstants {
   // WEB API - Para funcionalidades que usan el servidor web
   // ============================================
   static String get webApiBaseUrl =>
-      dotenv.env['WEB_API_BASE_URL'] ?? 'https://nicovantage.victoriafp.online';
+      dotenv.env['WEB_API_BASE_URL'] ??
+      dotenv.env['PUBLIC_SITE_URL'] ??
+      'https://nicovantage.victoriafp.online';
 
   // ============================================
   // TALLAS DISPONIBLES

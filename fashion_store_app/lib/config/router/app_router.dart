@@ -458,14 +458,15 @@ class _MainShellState extends State<_MainShell> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
       body: widget.child,
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: colorScheme.surface,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
+              color: colorScheme.onSurface.withValues(alpha: 0.08),
               blurRadius: 10,
               offset: const Offset(0, -5),
             ),
@@ -545,6 +546,8 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
@@ -553,7 +556,7 @@ class _NavItem extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
           color: isSelected
-              ? AppColors.primary.withValues(alpha: 0.1)
+              ? colorScheme.primary.withValues(alpha: 0.15)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
         ),
@@ -562,17 +565,21 @@ class _NavItem extends StatelessWidget {
           children: [
             Icon(
               isSelected ? activeIcon : icon,
-              color: isSelected ? AppColors.primary : AppColors.textSecondary,
+              color: isSelected
+                  ? colorScheme.primary
+                  : colorScheme.onSurface.withValues(alpha: 0.6),
               size: 24,
             ),
             const SizedBox(height: 4),
             Text(
               label,
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                color: isSelected ? AppColors.primary : AppColors.textSecondary,
-              ),
+              style: (textTheme.labelSmall ?? const TextStyle(fontSize: 10))
+                  .copyWith(
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                    color: isSelected
+                        ? colorScheme.primary
+                        : colorScheme.onSurface.withValues(alpha: 0.6),
+                  ),
             ),
           ],
         ),

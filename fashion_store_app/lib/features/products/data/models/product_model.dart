@@ -1,6 +1,7 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 import '../../../categories/data/models/category_model.dart';
+import '../../../../config/constants/app_constants.dart';
 
 part 'product_model.freezed.dart';
 part 'product_model.g.dart';
@@ -32,16 +33,49 @@ class ProductModel with _$ProductModel {
   factory ProductModel.fromJson(Map<String, dynamic> json) =>
       _$ProductModelFromJson(json);
 
+  String _normalizeImageUrl(String? rawUrl) {
+    if (rawUrl == null || rawUrl.isEmpty) return '';
+    if (rawUrl.startsWith('http://') || rawUrl.startsWith('https://')) {
+      return rawUrl;
+    }
+
+    final trimmed = rawUrl.startsWith('/') ? rawUrl.substring(1) : rawUrl;
+    final base = AppConstants.supabaseUrl;
+    if (trimmed.startsWith(AppConstants.productImagesBucket)) {
+      return '$base/storage/v1/object/public/$trimmed';
+    }
+
+    return '$base/storage/v1/object/public/${AppConstants.productImagesBucket}/$trimmed';
+  }
+
   // ============================================
   // PROPIEDADES COMPUTADAS
   // ============================================
 
   /// Imagen principal del producto
-  String get mainImage =>
-      imageUrl ??
-      (images.isNotEmpty
-          ? images.first
-          : 'https://via.placeholder.com/400x600?text=No+Image');
+  String get mainImage {
+    final rawUrl = imageUrl ?? (images.isNotEmpty ? images.first : null);
+    if (rawUrl == null || rawUrl.isEmpty) {
+      return 'https://via.placeholder.com/400x600?text=No+Image';
+    }
+
+    final normalized = _normalizeImageUrl(rawUrl);
+    return normalized.isEmpty
+        ? 'https://via.placeholder.com/400x600?text=No+Image'
+        : normalized;
+  }
+
+  /// Lista de imágenes normalizadas
+  List<String> get displayImages {
+    final source = images.isNotEmpty ? images : [if (imageUrl != null) imageUrl!];
+    final normalized = source
+        .map(_normalizeImageUrl)
+        .where((url) => url.isNotEmpty)
+        .toList();
+
+    if (normalized.isNotEmpty) return normalized;
+    return ['https://via.placeholder.com/400x600?text=No+Image'];
+  }
 
   /// Precio actual (con o sin descuento)
   int get currentPrice => isOnSale && salePrice != null ? salePrice! : price;

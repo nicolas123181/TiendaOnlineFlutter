@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 import '../../../../config/theme/app_colors.dart';
 import '../../../../config/theme/app_text_styles.dart';
+import '../../../../config/constants/app_constants.dart';
 import '../../../../shared/services/supabase_service.dart';
 import '../../data/models/return_model.dart';
 
@@ -191,21 +194,57 @@ class _CreateReturnScreenState extends ConsumerState<CreateReturnScreen> {
     try {
       final supabase = ref.read(supabaseClientProvider);
 
-      // Crear número de devolución
-      final returnNumber =
-          'RET-${DateTime.now().millisecondsSinceEpoch.toString().substring(5)}';
+      // Obtener items del pedido para construir la devolución
+      final itemsResponse = await supabase
+          .from('order_items')
+          .select('id, quantity')
+          .eq('order_id', widget.orderId);
 
-      // Insertar devolución
-      await supabase.from('returns').insert({
-        'order_id': widget.orderId,
-        'return_number': returnNumber,
-        'status': 'pending',
-        'reason': _selectedReason,
-        'customer_notes': _notesController.text.isNotEmpty
-            ? _notesController.text
-            : null,
-        'refund_amount': 0, // Se calculará en el backend
-      });
+      final items = (itemsResponse as List)
+          .map(
+            (item) => {
+              'order_item_id': item['id'] as int,
+              'quantity': item['quantity'] as int,
+            },
+          )
+          .toList();
+
+      if (items.isEmpty) {
+        throw Exception('No se encontraron productos en el pedido');
+      }
+
+      final session = supabase.auth.currentSession;
+      final headers = <String, String>{
+        'Content-Type': 'application/json',
+      };
+
+      if (session?.accessToken != null) {
+        headers['Authorization'] = 'Bearer ${session!.accessToken}';
+      }
+
+      final response = await http.post(
+        Uri.parse('${AppConstants.webApiBaseUrl}/api/returns/create-return'),
+        headers: headers,
+        body: jsonEncode({
+          'orderId': widget.orderId,
+          'items': items,
+          'reason': _mapReturnReason(_selectedReason!),
+          'reasonDetails': _notesController.text.isNotEmpty
+              ? _notesController.text
+              : null,
+        }),
+      );
+
+      if (response.statusCode != 200) {
+        final body = response.body.isNotEmpty
+            ? jsonDecode(response.body)
+            : null;
+        final errorMessage =
+            body is Map && body['error'] is String
+                ? body['error'] as String
+                : 'Error al enviar la solicitud';
+        throw Exception(errorMessage);
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -224,6 +263,25 @@ class _CreateReturnScreenState extends ConsumerState<CreateReturnScreen> {
       if (mounted) {
         setState(() => _isLoading = false);
       }
+    }
+  }
+
+  String _mapReturnReason(String reason) {
+    switch (reason) {
+      case 'No me queda bien la talla':
+        return 'wrong_size';
+      case 'El producto no es como esperaba':
+        return 'not_as_expected';
+      case 'Producto defectuoso':
+        return 'defective';
+      case 'Cambio de opinión':
+        return 'changed_mind';
+      case 'Pedido incorrecto':
+        return 'other';
+      case 'Otro motivo':
+        return 'other';
+      default:
+        return 'other';
     }
   }
 }
@@ -260,11 +318,11 @@ class ReturnStatusBadge extends StatelessWidget {
         bgColor = AppColors.warning.withValues(alpha: 0.1);
         textColor = AppColors.warning;
         break;
-      case 'approved':
+      case 'received':
         bgColor = AppColors.info.withValues(alpha: 0.1);
         textColor = AppColors.info;
         break;
-      case 'completed':
+      case 'refunded':
         bgColor = AppColors.success.withValues(alpha: 0.1);
         textColor = AppColors.success;
         break;
@@ -295,10 +353,10 @@ class ReturnStatusBadge extends StatelessWidget {
     switch (status) {
       case 'pending':
         return 'Pendiente';
-      case 'approved':
-        return 'Aprobada';
-      case 'completed':
-        return 'Completada';
+      case 'received':
+        return 'Recibida';
+      case 'refunded':
+        return 'Reembolsada';
       case 'rejected':
         return 'Rechazada';
       case 'cancelled':

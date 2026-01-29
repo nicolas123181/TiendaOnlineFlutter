@@ -12,6 +12,8 @@ class SettingsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     final userAsync = ref.watch(currentUserProvider);
     final isAdmin = ref.watch(isAdminProvider);
 
@@ -26,15 +28,15 @@ class SettingsScreen extends ConsumerWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.settings_outlined,
                       size: 80,
-                      color: AppColors.textSecondary,
+                      color: colorScheme.onSurface.withValues(alpha: 0.6),
                     ),
                     const SizedBox(height: 24),
                     Text(
                       'Inicia sesión para acceder a la configuración',
-                      style: AppTextStyles.h4,
+                      style: textTheme.headlineSmall,
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 32),
@@ -55,15 +57,17 @@ class SettingsScreen extends ConsumerWidget {
                 // Información del usuario
                 Container(
                   padding: const EdgeInsets.all(24),
-                  color: AppColors.primary.withValues(alpha: 0.05),
+                  color: colorScheme.primary.withValues(alpha: 0.08),
                   child: Row(
                     children: [
                       CircleAvatar(
                         radius: 40,
-                        backgroundColor: AppColors.primary,
+                        backgroundColor: colorScheme.primary,
                         child: Text(
                           user.initials,
-                          style: AppTextStyles.h3.copyWith(color: Colors.white),
+                          style: AppTextStyles.h3.copyWith(
+                            color: colorScheme.onPrimary,
+                          ),
                         ),
                       ),
                       const SizedBox(width: 16),
@@ -71,12 +75,17 @@ class SettingsScreen extends ConsumerWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(user.displayName, style: AppTextStyles.h4),
+                            Text(
+                              user.displayName,
+                              style: textTheme.headlineSmall,
+                            ),
                             const SizedBox(height: 4),
                             Text(
                               user.email,
-                              style: AppTextStyles.bodyMedium.copyWith(
-                                color: AppColors.textSecondary,
+                              style: textTheme.bodyMedium?.copyWith(
+                                color: colorScheme.onSurface.withValues(
+                                  alpha: 0.7,
+                                ),
                               ),
                             ),
                             if (isAdmin) ...[
@@ -87,13 +96,13 @@ class SettingsScreen extends ConsumerWidget {
                                   vertical: 4,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: AppColors.primary,
+                                  color: colorScheme.primary,
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Text(
                                   'ADMINISTRADOR',
                                   style: AppTextStyles.labelSmall.copyWith(
-                                    color: Colors.white,
+                                    color: colorScheme.onPrimary,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
@@ -358,7 +367,10 @@ class SettingsScreen extends ConsumerWidget {
             children: [
               const Icon(Icons.error_outline, size: 64, color: AppColors.error),
               const SizedBox(height: 16),
-              Text('Error al cargar configuración', style: AppTextStyles.h4),
+              Text(
+                'Error al cargar configuración',
+                style: textTheme.headlineSmall,
+              ),
             ],
           ),
         ),
@@ -381,6 +393,8 @@ class _SettingsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -388,12 +402,12 @@ class _SettingsSection extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
           child: Row(
             children: [
-              Icon(icon, size: 20, color: AppColors.primary),
+              Icon(icon, size: 20, color: colorScheme.primary),
               const SizedBox(width: 8),
               Text(
                 title,
-                style: AppTextStyles.labelLarge.copyWith(
-                  color: AppColors.primary,
+                style: textTheme.labelLarge?.copyWith(
+                  color: colorScheme.primary,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -402,10 +416,10 @@ class _SettingsSection extends StatelessWidget {
         ),
         Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: colorScheme.surface,
             border: Border(
-              top: BorderSide(color: Colors.grey[200]!),
-              bottom: BorderSide(color: Colors.grey[200]!),
+              top: BorderSide(color: Theme.of(context).dividerColor),
+              bottom: BorderSide(color: Theme.of(context).dividerColor),
             ),
           ),
           child: Column(children: children),
@@ -433,21 +447,30 @@ class _SettingsTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     return ListTile(
       leading: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: AppColors.primary.withValues(alpha: 0.1),
+          color: colorScheme.primary.withValues(alpha: 0.12),
           borderRadius: BorderRadius.circular(8),
         ),
-        child: Icon(icon, color: AppColors.primary, size: 24),
+        child: Icon(icon, color: colorScheme.primary, size: 24),
       ),
-      title: Text(title, style: AppTextStyles.labelLarge),
+      title: Text(title, style: textTheme.labelLarge),
       subtitle: Text(
         subtitle,
-        style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
+        style: textTheme.bodySmall?.copyWith(
+          color: colorScheme.onSurface.withValues(alpha: 0.7),
+        ),
       ),
-      trailing: trailing ?? const Icon(Icons.chevron_right),
+      trailing:
+          trailing ??
+          Icon(
+            Icons.chevron_right,
+            color: colorScheme.onSurface.withValues(alpha: 0.6),
+          ),
       onTap: onTap,
     );
   }

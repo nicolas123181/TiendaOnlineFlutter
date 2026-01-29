@@ -16,6 +16,8 @@ class FavoritesScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     final isAuthenticated = ref.watch(isAuthenticatedProvider);
 
     if (!isAuthenticated) {
@@ -27,15 +29,15 @@ class FavoritesScreen extends ConsumerWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(
+                Icon(
                   Icons.favorite_outline,
                   size: 80,
-                  color: AppColors.textSecondary,
+                  color: colorScheme.onSurface.withValues(alpha: 0.6),
                 ),
                 const SizedBox(height: 24),
                 Text(
                   'Inicia sesión para ver tus favoritos',
-                  style: AppTextStyles.h4,
+                  style: textTheme.headlineSmall,
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 32),
@@ -63,7 +65,7 @@ class FavoritesScreen extends ConsumerWidget {
                     child: Center(
                       child: Text(
                         '${items.length}',
-                        style: AppTextStyles.labelLarge,
+                        style: textTheme.labelLarge,
                       ),
                     ),
                   )
@@ -110,12 +112,17 @@ class FavoritesScreen extends ConsumerWidget {
                         ),
                   title: Text(
                     item.productName ?? 'Producto',
-                    style: AppTextStyles.labelLarge,
+                    style: textTheme.labelLarge,
                   ),
                   subtitle: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Talla: ${item.size}'),
+                      Text(
+                        'Talla: ${item.size}',
+                        style: textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onSurface.withValues(alpha: 0.7),
+                        ),
+                      ),
                       Row(
                         children: [
                           if (item.productIsOnSale &&
@@ -124,7 +131,9 @@ class FavoritesScreen extends ConsumerWidget {
                               '€${item.productPrice}',
                               style: AppTextStyles.bodySmall.copyWith(
                                 decoration: TextDecoration.lineThrough,
-                                color: AppColors.textSecondary,
+                                color: colorScheme.onSurface.withValues(
+                                  alpha: 0.6,
+                                ),
                               ),
                             ),
                             const SizedBox(width: 8),
@@ -156,7 +165,9 @@ class FavoritesScreen extends ConsumerWidget {
                               item.productSalePrice == null)
                             Text(
                               '€${item.productPrice}',
-                              style: AppTextStyles.labelMedium,
+                              style: AppTextStyles.labelMedium.copyWith(
+                                color: colorScheme.onSurface,
+                              ),
                             ),
                         ],
                       ),
@@ -212,14 +223,14 @@ class FavoritesScreen extends ConsumerWidget {
                 const SizedBox(height: 16),
                 Text(
                   'Error al cargar favoritos',
-                  style: AppTextStyles.h4,
+                  style: textTheme.headlineSmall,
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 8),
                 Text(
                   error.toString(),
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    color: AppColors.textSecondary,
+                  style: textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onSurface.withValues(alpha: 0.7),
                   ),
                   textAlign: TextAlign.center,
                 ),

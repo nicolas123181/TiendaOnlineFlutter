@@ -11,6 +11,8 @@ class AddressesScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     final addressesAsync = ref.watch(userAddressesProvider);
 
     return Scaffold(
@@ -30,13 +32,13 @@ class AddressesScreen extends ConsumerWidget {
                   Icon(
                     Icons.location_off,
                     size: 64,
-                    color: AppColors.textSecondary,
+                    color: colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
                   const SizedBox(height: 16),
                   Text(
                     'No tienes direcciones guardadas',
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: AppColors.textSecondary,
+                    style: textTheme.bodyMedium?.copyWith(
+                      color: colorScheme.onSurface.withValues(alpha: 0.7),
                     ),
                   ),
                   const SizedBox(height: 24),
@@ -78,10 +80,7 @@ class AddressesScreen extends ConsumerWidget {
             children: [
               Icon(Icons.error_outline, size: 48, color: AppColors.error),
               const SizedBox(height: 16),
-              Text(
-                'Error al cargar direcciones',
-                style: AppTextStyles.bodyMedium,
-              ),
+              Text('Error al cargar direcciones', style: textTheme.bodyMedium),
               const SizedBox(height: 8),
               ElevatedButton(
                 onPressed: () => ref.invalidate(userAddressesProvider),
@@ -184,12 +183,16 @@ class _AddressCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(
-          color: address.isDefault ? AppColors.primary : AppColors.border,
+          color: address.isDefault
+              ? colorScheme.primary
+              : Theme.of(context).dividerColor,
           width: address.isDefault ? 2 : 1,
         ),
       ),
@@ -201,10 +204,7 @@ class _AddressCard extends StatelessWidget {
             Row(
               children: [
                 Expanded(
-                  child: Text(
-                    address.fullName,
-                    style: AppTextStyles.labelLarge,
-                  ),
+                  child: Text(address.fullName, style: textTheme.labelLarge),
                 ),
                 if (address.isDefault)
                   Container(
@@ -213,13 +213,13 @@ class _AddressCard extends StatelessWidget {
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.1),
+                      color: colorScheme.primary.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
                       'Principal',
                       style: AppTextStyles.caption.copyWith(
-                        color: AppColors.primary,
+                        color: colorScheme.primary,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -227,22 +227,26 @@ class _AddressCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 8),
-            Text(address.address, style: AppTextStyles.bodyMedium),
+            Text(address.address, style: textTheme.bodyMedium),
             Text(
               '${address.postalCode} ${address.city}',
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: AppColors.textSecondary,
+              style: textTheme.bodyMedium?.copyWith(
+                color: colorScheme.onSurface.withValues(alpha: 0.7),
               ),
             ),
             const SizedBox(height: 4),
             Row(
               children: [
-                Icon(Icons.phone, size: 14, color: AppColors.textSecondary),
+                Icon(
+                  Icons.phone,
+                  size: 14,
+                  color: colorScheme.onSurface.withValues(alpha: 0.6),
+                ),
                 const SizedBox(width: 4),
                 Text(
                   address.phone,
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: AppColors.textSecondary,
+                  style: textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurface.withValues(alpha: 0.7),
                   ),
                 ),
               ],
@@ -354,8 +358,8 @@ class _AddressFormSheetState extends State<_AddressFormSheet> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       padding: EdgeInsets.only(
@@ -377,7 +381,7 @@ class _AddressFormSheetState extends State<_AddressFormSheet> {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: AppColors.border,
+                    color: Theme.of(context).dividerColor,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -386,7 +390,7 @@ class _AddressFormSheetState extends State<_AddressFormSheet> {
 
               Text(
                 widget.address != null ? 'Editar dirección' : 'Nueva dirección',
-                style: AppTextStyles.h4,
+                style: Theme.of(context).textTheme.headlineSmall,
               ),
               const SizedBox(height: 24),
 

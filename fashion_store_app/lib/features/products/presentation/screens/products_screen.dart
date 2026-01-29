@@ -76,7 +76,10 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
               ),
               itemCount: products.length,
               itemBuilder: (context, index) {
-                return ProductCard(product: products[index]);
+                return ProductCard(
+                  product: products[index],
+                  heroTag: 'products-grid-${products[index].id}-$index',
+                );
               },
             ),
           );

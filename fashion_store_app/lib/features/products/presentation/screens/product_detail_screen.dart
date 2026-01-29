@@ -18,6 +18,8 @@ class ProductDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     final productAsync = ref.watch(productBySlugProvider(slug));
 
     return Scaffold(
@@ -29,15 +31,16 @@ class ProductDetailScreen extends ConsumerWidget {
               SliverAppBar(
                 expandedHeight: MediaQuery.of(context).size.height * 0.5,
                 pinned: true,
-                backgroundColor: AppColors.surface,
+                backgroundColor: colorScheme.surface,
+                surfaceTintColor: colorScheme.surface,
                 leading: IconButton(
                   icon: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: AppColors.surface,
+                      color: colorScheme.surface,
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.arrow_back),
+                    child: Icon(Icons.arrow_back, color: colorScheme.onSurface),
                   ),
                   onPressed: () => context.pop(),
                 ),
@@ -46,10 +49,10 @@ class ProductDetailScreen extends ConsumerWidget {
                     icon: Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: AppColors.surface,
+                        color: colorScheme.surface,
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(Icons.share),
+                      child: Icon(Icons.share, color: colorScheme.onSurface),
                     ),
                     onPressed: () {
                       // TODO: Compartir producto
@@ -59,10 +62,13 @@ class ProductDetailScreen extends ConsumerWidget {
                     icon: Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: AppColors.surface,
+                        color: colorScheme.surface,
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(Icons.favorite_outline),
+                      child: Icon(
+                        Icons.favorite_outline,
+                        color: colorScheme.onSurface,
+                      ),
                     ),
                     onPressed: () {
                       // TODO: Añadir a favoritos
@@ -76,9 +82,7 @@ class ProductDetailScreen extends ConsumerWidget {
                     children: [
                       // Galería de imágenes (sin Hero para evitar anidamiento)
                       ImageGallery(
-                        images: product.images.isNotEmpty
-                            ? product.images
-                            : [product.mainImage],
+                        images: product.displayImages,
                         heroTagPrefix: null, // Desactivar Hero en galería
                       ),
 
@@ -136,15 +140,15 @@ class ProductDetailScreen extends ConsumerWidget {
                       if (product.category != null)
                         Text(
                           product.category!.name.toUpperCase(),
-                          style: AppTextStyles.labelMedium.copyWith(
-                            color: AppColors.textSecondary,
+                          style: textTheme.labelMedium?.copyWith(
+                            color: colorScheme.onSurface.withValues(alpha: 0.7),
                             letterSpacing: 1,
                           ),
                         ),
                       const SizedBox(height: 8),
 
                       // Nombre
-                      Text(product.name, style: AppTextStyles.h2),
+                      Text(product.name, style: textTheme.headlineMedium),
                       const SizedBox(height: 12),
 
                       // Precios
@@ -163,13 +167,17 @@ class ProductDetailScreen extends ConsumerWidget {
                               '${(product.price / 100).toStringAsFixed(2)} €',
                               style: AppTextStyles.bodyLarge.copyWith(
                                 decoration: TextDecoration.lineThrough,
-                                color: AppColors.textSecondary,
+                                color: colorScheme.onSurface.withValues(
+                                  alpha: 0.6,
+                                ),
                               ),
                             ),
                           ] else
                             Text(
                               '${(product.currentPrice / 100).toStringAsFixed(2)} €',
-                              style: AppTextStyles.h3,
+                              style: AppTextStyles.h3.copyWith(
+                                color: colorScheme.onSurface,
+                              ),
                             ),
                         ],
                       ),
@@ -211,12 +219,12 @@ class ProductDetailScreen extends ConsumerWidget {
                       const SizedBox(height: 32),
 
                       // Descripción
-                      Text('Descripción', style: AppTextStyles.h5),
+                      Text('Descripción', style: textTheme.headlineSmall),
                       const SizedBox(height: 12),
                       Text(
                         product.description ?? 'Sin descripción disponible.',
-                        style: AppTextStyles.bodyMedium.copyWith(
-                          color: AppColors.textSecondary,
+                        style: textTheme.bodyMedium?.copyWith(
+                          color: colorScheme.onSurface.withValues(alpha: 0.7),
                           height: 1.6,
                         ),
                       ),
@@ -269,26 +277,29 @@ class _InfoSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.backgroundSecondary,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Theme.of(context).dividerColor),
       ),
       child: Row(
         children: [
-          Icon(icon, color: AppColors.primary),
+          Icon(icon, color: colorScheme.primary),
           const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: AppTextStyles.labelLarge),
+                Text(title, style: textTheme.labelLarge),
                 const SizedBox(height: 2),
                 Text(
                   content,
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: AppColors.textSecondary,
+                  style: textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurface.withValues(alpha: 0.7),
                   ),
                 ),
               ],

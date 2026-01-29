@@ -38,6 +38,8 @@ class FlashOffersSection extends ConsumerWidget {
 class _FlashOffersContent extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     final saleProductsAsync = ref.watch(saleProductsProvider);
 
     return saleProductsAsync.when(
@@ -82,7 +84,9 @@ class _FlashOffersContent extends ConsumerWidget {
                         ),
                         Text(
                           '¡Solo por tiempo limitado!',
-                          style: AppTextStyles.bodySmall,
+                          style: textTheme.bodySmall?.copyWith(
+                            color: colorScheme.onSurface.withValues(alpha: 0.7),
+                          ),
                         ),
                       ],
                     ),

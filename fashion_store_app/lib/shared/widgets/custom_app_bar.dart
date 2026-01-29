@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../config/theme/app_colors.dart';
 import '../providers/theme_provider.dart';
 
 /// AppBar personalizado con acciones comunes (búsqueda, carrito, modo oscuro)
@@ -99,6 +98,7 @@ class _SearchBottomSheetState extends State<_SearchBottomSheet> {
   @override
   Widget build(BuildContext context) {
     return Container(
+      color: Theme.of(context).scaffoldBackgroundColor,
       height: MediaQuery.of(context).size.height * 0.85,
       decoration: BoxDecoration(
         color: Theme.of(context).scaffoldBackgroundColor,
@@ -112,7 +112,7 @@ class _SearchBottomSheetState extends State<_SearchBottomSheet> {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: AppColors.border,
+              color: Theme.of(context).dividerColor,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -159,13 +159,17 @@ class _SearchBottomSheetState extends State<_SearchBottomSheet> {
                         Icon(
                           Icons.search,
                           size: 64,
-                          color: AppColors.textSecondary.withValues(alpha: 0.5),
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withValues(alpha: 0.4),
                         ),
                         const SizedBox(height: 16),
                         Text(
                           'Escribe para buscar',
                           style: TextStyle(
-                            color: AppColors.textSecondary,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurface.withValues(alpha: 0.6),
                             fontSize: 16,
                           ),
                         ),

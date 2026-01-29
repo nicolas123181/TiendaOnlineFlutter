@@ -47,6 +47,23 @@ class _AddToCartButtonState extends ConsumerState<AddToCartButton>
     'XXL',
   ];
 
+  List<String> _resolveSizeOptions(Map<String, int>? sizesStock) {
+    if (sizesStock != null && sizesStock.isNotEmpty) {
+      final sizes = sizesStock.keys.toList();
+      sizes.sort((a, b) {
+        final ai = int.tryParse(a);
+        final bi = int.tryParse(b);
+        if (ai != null && bi != null) return ai.compareTo(bi);
+        if (ai != null) return -1;
+        if (bi != null) return 1;
+        return a.compareTo(b);
+      });
+      return sizes;
+    }
+
+    return _availableSizes;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -141,6 +158,9 @@ class _AddToCartButtonState extends ConsumerState<AddToCartButton>
   }
 
   Widget _buildContent(Map<String, int>? sizesStock) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final sizeOptions = _resolveSizeOptions(sizesStock);
     if (widget.isCompact) {
       return _buildCompactButton(sizesStock);
     }
@@ -153,14 +173,14 @@ class _AddToCartButtonState extends ConsumerState<AddToCartButton>
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Talla', style: AppTextStyles.labelLarge),
+              Text('Talla', style: textTheme.labelLarge),
               TextButton.icon(
                 onPressed: () => _showSizeGuide(context),
                 icon: const Icon(Icons.straighten, size: 16),
                 label: const Text('Guía de tallas'),
                 style: TextButton.styleFrom(
-                  foregroundColor: AppColors.textSecondary,
-                  textStyle: AppTextStyles.bodySmall,
+                  foregroundColor: colorScheme.onSurface.withValues(alpha: 0.7),
+                  textStyle: textTheme.bodySmall,
                 ),
               ),
             ],
@@ -169,7 +189,7 @@ class _AddToCartButtonState extends ConsumerState<AddToCartButton>
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: _availableSizes.map((size) {
+            children: sizeOptions.map((size) {
               final stockForSize = sizesStock?[size] ?? 0;
               final isSelected = _selectedSize == size;
               final isAvailable = stockForSize > 0;
@@ -193,18 +213,18 @@ class _AddToCartButtonState extends ConsumerState<AddToCartButton>
                   height: 52,
                   decoration: BoxDecoration(
                     color: !isAvailable
-                        ? AppColors.backgroundSecondary
+                        ? colorScheme.surface.withValues(alpha: 0.6)
                         : isSelected
-                        ? AppColors.primary
-                        : AppColors.surface,
+                        ? colorScheme.primary
+                        : colorScheme.surface,
                     border: Border.all(
                       color: !isAvailable
-                          ? AppColors.border
+                          ? Theme.of(context).dividerColor
                           : isSelected
-                          ? AppColors.primary
+                          ? colorScheme.primary
                           : isLowStock
                           ? AppColors.warning
-                          : AppColors.border,
+                          : Theme.of(context).dividerColor,
                       width: isSelected || isLowStock ? 2 : 1,
                     ),
                     borderRadius: BorderRadius.circular(8),
@@ -219,10 +239,10 @@ class _AddToCartButtonState extends ConsumerState<AddToCartButton>
                             size,
                             style: AppTextStyles.labelMedium.copyWith(
                               color: !isAvailable
-                                  ? AppColors.textSecondary
+                                  ? colorScheme.onSurface.withValues(alpha: 0.4)
                                   : isSelected
-                                  ? Colors.white
-                                  : AppColors.primary,
+                                  ? colorScheme.onPrimary
+                                  : colorScheme.onSurface,
                               fontWeight: isSelected
                                   ? FontWeight.w600
                                   : FontWeight.w400,
@@ -236,7 +256,9 @@ class _AddToCartButtonState extends ConsumerState<AddToCartButton>
                               '($stockForSize)',
                               style: AppTextStyles.caption.copyWith(
                                 color: isSelected
-                                    ? Colors.white70
+                                    ? colorScheme.onPrimary.withValues(
+                                        alpha: 0.8,
+                                      )
                                     : AppColors.warning,
                                 fontSize: 10,
                               ),
@@ -318,7 +340,7 @@ class _AddToCartButtonState extends ConsumerState<AddToCartButton>
         // Selector de cantidad
         Row(
           children: [
-            Text('Cantidad', style: AppTextStyles.labelLarge),
+            Text('Cantidad', style: textTheme.labelLarge),
             const Spacer(),
             _QuantityControl(
               quantity: _quantity,
@@ -360,6 +382,7 @@ class _AddToCartButtonState extends ConsumerState<AddToCartButton>
   }
 
   Widget _buildCompactButton(Map<String, int>? sizesStock) {
+    final colorScheme = Theme.of(context).colorScheme;
     return ScaleTransition(
       scale: _scaleAnimation,
       child: CustomIconButton(
@@ -369,8 +392,8 @@ class _AddToCartButtonState extends ConsumerState<AddToCartButton>
         onPressed: widget.product.isInStock
             ? () => _showAddToCartSheet(context, sizesStock)
             : null,
-        backgroundColor: AppColors.primary,
-        iconColor: Colors.white,
+        backgroundColor: colorScheme.primary,
+        iconColor: colorScheme.onPrimary,
         size: 36,
         tooltip: widget.product.isOutOfStock ? 'Agotado' : 'Añadir al carrito',
       ),
@@ -436,6 +459,23 @@ class _AddToCartSheetState extends State<_AddToCartSheet> {
     'XXL',
   ];
 
+  List<String> _resolveSizeOptions() {
+    if (widget.sizesStock.isNotEmpty) {
+      final sizes = widget.sizesStock.keys.toList();
+      sizes.sort((a, b) {
+        final ai = int.tryParse(a);
+        final bi = int.tryParse(b);
+        if (ai != null && bi != null) return ai.compareTo(bi);
+        if (ai != null) return -1;
+        if (bi != null) return 1;
+        return a.compareTo(b);
+      });
+      return sizes;
+    }
+
+    return _availableSizes;
+  }
+
   int get _maxQuantity {
     if (_selectedSize == null) return 0;
     return widget.sizesStock[_selectedSize] ?? 0;
@@ -443,9 +483,12 @@ class _AddToCartSheetState extends State<_AddToCartSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final sizeOptions = _resolveSizeOptions();
     return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       padding: EdgeInsets.only(
@@ -464,7 +507,7 @@ class _AddToCartSheetState extends State<_AddToCartSheet> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: AppColors.border,
+                color: Theme.of(context).dividerColor,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -484,8 +527,11 @@ class _AddToCartSheetState extends State<_AddToCartSheet> {
                   errorBuilder: (_, __, ___) => Container(
                     width: 60,
                     height: 80,
-                    color: AppColors.backgroundSecondary,
-                    child: const Icon(Icons.image_not_supported),
+                    color: colorScheme.surface,
+                    child: Icon(
+                      Icons.image_not_supported,
+                      color: colorScheme.onSurface.withValues(alpha: 0.5),
+                    ),
                   ),
                 ),
               ),
@@ -496,14 +542,16 @@ class _AddToCartSheetState extends State<_AddToCartSheet> {
                   children: [
                     Text(
                       widget.product.name,
-                      style: AppTextStyles.labelLarge,
+                      style: textTheme.labelLarge,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),
                     Text(
                       '${(widget.product.currentPrice / 100).toStringAsFixed(2)} €',
-                      style: AppTextStyles.price,
+                      style: AppTextStyles.price.copyWith(
+                        color: colorScheme.onSurface,
+                      ),
                     ),
                   ],
                 ),
@@ -516,13 +564,13 @@ class _AddToCartSheetState extends State<_AddToCartSheet> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Talla', style: AppTextStyles.labelLarge),
+              Text('Talla', style: textTheme.labelLarge),
               TextButton.icon(
                 onPressed: () => _showSizeGuide(context),
                 icon: const Icon(Icons.straighten, size: 14),
                 label: const Text('Guía'),
                 style: TextButton.styleFrom(
-                  foregroundColor: AppColors.textSecondary,
+                  foregroundColor: colorScheme.onSurface.withValues(alpha: 0.7),
                   padding: EdgeInsets.zero,
                   minimumSize: Size.zero,
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -534,7 +582,7 @@ class _AddToCartSheetState extends State<_AddToCartSheet> {
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: _availableSizes.map((size) {
+            children: sizeOptions.map((size) {
               final stockForSize = widget.sizesStock[size] ?? 0;
               final isSelected = _selectedSize == size;
               final isAvailable = stockForSize > 0;
@@ -556,18 +604,18 @@ class _AddToCartSheetState extends State<_AddToCartSheet> {
                   height: 48,
                   decoration: BoxDecoration(
                     color: !isAvailable
-                        ? AppColors.backgroundSecondary
+                        ? colorScheme.surface.withValues(alpha: 0.6)
                         : isSelected
-                        ? AppColors.primary
-                        : AppColors.surface,
+                        ? colorScheme.primary
+                        : colorScheme.surface,
                     border: Border.all(
                       color: !isAvailable
-                          ? AppColors.border
+                          ? Theme.of(context).dividerColor
                           : isSelected
-                          ? AppColors.primary
+                          ? colorScheme.primary
                           : isLowStock
                           ? AppColors.warning
-                          : AppColors.border,
+                          : Theme.of(context).dividerColor,
                     ),
                     borderRadius: BorderRadius.circular(8),
                   ),
@@ -578,10 +626,10 @@ class _AddToCartSheetState extends State<_AddToCartSheet> {
                         size,
                         style: TextStyle(
                           color: !isAvailable
-                              ? AppColors.textSecondary
+                              ? colorScheme.onSurface.withValues(alpha: 0.4)
                               : isSelected
-                              ? Colors.white
-                              : AppColors.primary,
+                              ? colorScheme.onPrimary
+                              : colorScheme.onSurface,
                           fontWeight: FontWeight.w500,
                           decoration: !isAvailable
                               ? TextDecoration.lineThrough
@@ -593,7 +641,7 @@ class _AddToCartSheetState extends State<_AddToCartSheet> {
                           '($stockForSize)',
                           style: TextStyle(
                             color: isSelected
-                                ? Colors.white70
+                                ? colorScheme.onPrimary.withValues(alpha: 0.8)
                                 : AppColors.warning,
                             fontSize: 9,
                           ),
@@ -680,9 +728,11 @@ class _QuantityControl extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     return Container(
       decoration: BoxDecoration(
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: Theme.of(context).dividerColor),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
@@ -695,7 +745,12 @@ class _QuantityControl extends StatelessWidget {
           Container(
             width: 48,
             alignment: Alignment.center,
-            child: Text(quantity.toString(), style: AppTextStyles.labelLarge),
+            child: Text(
+              quantity.toString(),
+              style: textTheme.labelLarge?.copyWith(
+                color: colorScheme.onSurface,
+              ),
+            ),
           ),
           _QuantityButton(
             icon: Icons.add,
@@ -717,6 +772,7 @@ class _QuantityButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return InkWell(
       onTap: onPressed,
       borderRadius: BorderRadius.circular(8),
@@ -727,7 +783,9 @@ class _QuantityButton extends StatelessWidget {
         child: Icon(
           icon,
           size: 18,
-          color: onPressed != null ? AppColors.primary : AppColors.border,
+          color: onPressed != null
+              ? colorScheme.primary
+              : Theme.of(context).dividerColor,
         ),
       ),
     );

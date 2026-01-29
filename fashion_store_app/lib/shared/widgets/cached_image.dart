@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../config/theme/app_colors.dart';
 import 'loaders.dart';
@@ -26,8 +27,21 @@ class CachedImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    String resolvedUrl = imageUrl.trim();
+    if (resolvedUrl.isNotEmpty &&
+        (resolvedUrl.startsWith('http://') ||
+            resolvedUrl.startsWith('https://'))) {
+      // Encode URLs with spaces or unsafe characters (common in Windows).
+      final needsEncoding = RegExp(r"[\s\[\]{}|\\^`]").hasMatch(
+        resolvedUrl,
+      );
+      if (needsEncoding) {
+        resolvedUrl = Uri.encodeFull(resolvedUrl);
+      }
+    }
+
     Widget image = CachedNetworkImage(
-      imageUrl: imageUrl,
+      imageUrl: resolvedUrl,
       width: width,
       height: height,
       fit: fit,
@@ -159,113 +173,286 @@ class _ImageGalleryState extends State<ImageGallery> {
       );
     }
 
-    return Column(
-      children: [
-        // Imagen principal con PageView
-        AspectRatio(
-          aspectRatio: 3 / 4,
-          child: PageView.builder(
-            controller: _pageController,
-            onPageChanged: (index) {
-              setState(() {
-                _selectedIndex = index;
-              });
-            },
-            itemCount: widget.images.length,
-            itemBuilder: (context, index) {
-              final heroTag = widget.heroTagPrefix != null
-                  ? '${widget.heroTagPrefix}_$index'
-                  : null;
-              return GestureDetector(
-                onTap: () => widget.onImageTap?.call(index),
-                child: heroTag != null
-                    ? Hero(
-                        tag: heroTag,
-                        child: CachedImage(
-                          imageUrl: widget.images[index],
-                          fit: BoxFit.cover,
-                        ),
-                      )
-                    : CachedImage(
-                        imageUrl: widget.images[index],
-                        fit: BoxFit.cover,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final maxHeight = constraints.maxHeight;
+        final showExtras = widget.images.length > 1;
+        final indicatorsHeight = showExtras ? 20.0 : 0.0;
+        final thumbnailsHeight = showExtras ? 72.0 : 0.0;
+        final spacing = showExtras ? 24.0 : 0.0;
+        final reserved = indicatorsHeight + thumbnailsHeight + spacing;
+        final available = maxHeight.isFinite && maxHeight > reserved
+            ? maxHeight - reserved
+            : null;
+
+        final showThumbnails = showExtras && (available == null || available > 240);
+
+        return Column(
+          children: [
+            // Imagen principal con PageView
+            if (available != null)
+              SizedBox(
+                height: available,
+                child: Stack(
+                  children: [
+                    ScrollConfiguration(
+                      behavior: const MaterialScrollBehavior().copyWith(
+                        dragDevices: {
+                          PointerDeviceKind.touch,
+                          PointerDeviceKind.mouse,
+                          PointerDeviceKind.trackpad,
+                        },
                       ),
-              );
-            },
-          ),
-        ),
-
-        // Indicadores de página
-        if (widget.images.length > 1) ...[
-          const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: List.generate(widget.images.length, (index) {
-              return AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                margin: const EdgeInsets.symmetric(horizontal: 3),
-                width: _selectedIndex == index ? 24 : 8,
-                height: 8,
-                decoration: BoxDecoration(
-                  color: _selectedIndex == index
-                      ? AppColors.primary
-                      : AppColors.border,
-                  borderRadius: BorderRadius.circular(4),
+                      child: PageView.builder(
+                        controller: _pageController,
+                        onPageChanged: (index) {
+                          setState(() {
+                            _selectedIndex = index;
+                          });
+                        },
+                        itemCount: widget.images.length,
+                        itemBuilder: (context, index) {
+                          final heroTag = widget.heroTagPrefix != null
+                              ? '${widget.heroTagPrefix}_$index'
+                              : null;
+                          return GestureDetector(
+                            onTap: () => widget.onImageTap?.call(index),
+                            child: heroTag != null
+                                ? Hero(
+                                    tag: heroTag,
+                                    child: CachedImage(
+                                      imageUrl: widget.images[index],
+                                      fit: BoxFit.cover,
+                                    ),
+                                  )
+                                : CachedImage(
+                                    imageUrl: widget.images[index],
+                                    fit: BoxFit.cover,
+                                  ),
+                          );
+                        },
+                      ),
+                    ),
+                    if (widget.images.length > 1) ...[
+                      Positioned(
+                        left: 12,
+                        top: 0,
+                        bottom: 0,
+                        child: _GalleryNavButton(
+                          icon: Icons.chevron_left,
+                          onPressed: () {
+                            final previous =
+                                (_selectedIndex - 1 + widget.images.length) %
+                                widget.images.length;
+                            _pageController.animateToPage(
+                              previous,
+                              duration: const Duration(milliseconds: 250),
+                              curve: Curves.easeOut,
+                            );
+                          },
+                        ),
+                      ),
+                      Positioned(
+                        right: 12,
+                        top: 0,
+                        bottom: 0,
+                        child: _GalleryNavButton(
+                          icon: Icons.chevron_right,
+                          onPressed: () {
+                            final next =
+                                (_selectedIndex + 1) % widget.images.length;
+                            _pageController.animateToPage(
+                              next,
+                              duration: const Duration(milliseconds: 250),
+                              curve: Curves.easeOut,
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
-              );
-            }),
-          ),
-        ],
+              )
+            else
+              AspectRatio(
+                aspectRatio: 3 / 4,
+                child: Stack(
+                  children: [
+                    ScrollConfiguration(
+                      behavior: const MaterialScrollBehavior().copyWith(
+                        dragDevices: {
+                          PointerDeviceKind.touch,
+                          PointerDeviceKind.mouse,
+                          PointerDeviceKind.trackpad,
+                        },
+                      ),
+                      child: PageView.builder(
+                        controller: _pageController,
+                        onPageChanged: (index) {
+                          setState(() {
+                            _selectedIndex = index;
+                          });
+                        },
+                        itemCount: widget.images.length,
+                        itemBuilder: (context, index) {
+                          final heroTag = widget.heroTagPrefix != null
+                              ? '${widget.heroTagPrefix}_$index'
+                              : null;
+                          return GestureDetector(
+                            onTap: () => widget.onImageTap?.call(index),
+                            child: heroTag != null
+                                ? Hero(
+                                    tag: heroTag,
+                                    child: CachedImage(
+                                      imageUrl: widget.images[index],
+                                      fit: BoxFit.cover,
+                                    ),
+                                  )
+                                : CachedImage(
+                                    imageUrl: widget.images[index],
+                                    fit: BoxFit.cover,
+                                  ),
+                          );
+                        },
+                      ),
+                    ),
+                    if (widget.images.length > 1) ...[
+                      Positioned(
+                        left: 12,
+                        top: 0,
+                        bottom: 0,
+                        child: _GalleryNavButton(
+                          icon: Icons.chevron_left,
+                          onPressed: () {
+                            final previous =
+                                (_selectedIndex - 1 + widget.images.length) %
+                                widget.images.length;
+                            _pageController.animateToPage(
+                              previous,
+                              duration: const Duration(milliseconds: 250),
+                              curve: Curves.easeOut,
+                            );
+                          },
+                        ),
+                      ),
+                      Positioned(
+                        right: 12,
+                        top: 0,
+                        bottom: 0,
+                        child: _GalleryNavButton(
+                          icon: Icons.chevron_right,
+                          onPressed: () {
+                            final next =
+                                (_selectedIndex + 1) % widget.images.length;
+                            _pageController.animateToPage(
+                              next,
+                              duration: const Duration(milliseconds: 250),
+                              curve: Curves.easeOut,
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
 
-        // Miniaturas
-        if (widget.images.length > 1) ...[
-          const SizedBox(height: 12),
-          SizedBox(
-            height: 60,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: widget.images.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 8),
-              itemBuilder: (context, index) {
-                return GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _selectedIndex = index;
-                    });
-                    _pageController.animateToPage(
-                      index,
-                      duration: const Duration(milliseconds: 300),
-                      curve: Curves.easeInOut,
+            // Indicadores de página
+            if (showExtras) ...[
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(widget.images.length, (index) {
+                  return AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    margin: const EdgeInsets.symmetric(horizontal: 3),
+                    width: _selectedIndex == index ? 24 : 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: _selectedIndex == index
+                          ? AppColors.primary
+                          : AppColors.border,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  );
+                }),
+              ),
+            ],
+
+            // Miniaturas
+            if (showThumbnails) ...[
+              const SizedBox(height: 12),
+              SizedBox(
+                height: 60,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: widget.images.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 8),
+                  itemBuilder: (context, index) {
+                    return GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          _selectedIndex = index;
+                        });
+                        _pageController.animateToPage(
+                          index,
+                          duration: const Duration(milliseconds: 300),
+                          curve: Curves.easeInOut,
+                        );
+                      },
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        width: 60,
+                        height: 60,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: _selectedIndex == index
+                                ? AppColors.primary
+                                : Colors.transparent,
+                            width: 2,
+                          ),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(6),
+                          child: CachedImage(
+                            imageUrl: widget.images[index],
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      ),
                     );
                   },
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    width: 60,
-                    height: 60,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: _selectedIndex == index
-                            ? AppColors.primary
-                            : Colors.transparent,
-                        width: 2,
-                      ),
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(6),
-                      child: CachedImage(
-                        imageUrl: widget.images[index],
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
-      ],
+                ),
+              ),
+            ],
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _GalleryNavButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onPressed;
+
+  const _GalleryNavButton({required this.icon, required this.onPressed});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Material(
+        color: AppColors.surface.withValues(alpha: 0.7),
+        shape: const CircleBorder(),
+        child: IconButton(
+          icon: Icon(icon, size: 24, color: AppColors.primary),
+          onPressed: onPressed,
+          splashRadius: 22,
+          tooltip: 'Cambiar imagen',
+        ),
+      ),
     );
   }
 }

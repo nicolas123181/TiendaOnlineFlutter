@@ -19,6 +19,9 @@ class HomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     return Scaffold(
       body: RefreshIndicator(
         onRefresh: () async {
@@ -33,7 +36,8 @@ class HomeScreen extends ConsumerWidget {
               floating: true,
               pinned: true,
               expandedHeight: 60,
-              backgroundColor: AppColors.surface,
+              backgroundColor: colorScheme.surface,
+              surfaceTintColor: colorScheme.surface,
               leading: Consumer(
                 builder: (context, ref, _) {
                   final isDark = ref.watch(themeModeProvider) == ThemeMode.dark;
@@ -47,7 +51,7 @@ class HomeScreen extends ConsumerWidget {
               ),
               title: Text(
                 'VANTAGE',
-                style: AppTextStyles.h3.copyWith(
+                style: textTheme.headlineSmall?.copyWith(
                   letterSpacing: 6,
                   fontWeight: FontWeight.w400,
                 ),
@@ -108,6 +112,9 @@ class HomeScreen extends ConsumerWidget {
   }
 
   void _showSearchSheet(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -117,8 +124,8 @@ class HomeScreen extends ConsumerWidget {
         minChildSize: 0.5,
         maxChildSize: 0.95,
         builder: (context, scrollController) => Container(
-          decoration: const BoxDecoration(
-            color: AppColors.surface,
+          decoration: BoxDecoration(
+            color: colorScheme.surface,
             borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
           ),
           child: Column(
@@ -128,7 +135,7 @@ class HomeScreen extends ConsumerWidget {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.border,
+                  color: Theme.of(context).dividerColor,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -138,13 +145,19 @@ class HomeScreen extends ConsumerWidget {
                   autofocus: true,
                   decoration: InputDecoration(
                     hintText: 'Buscar productos...',
-                    prefixIcon: const Icon(Icons.search),
+                    prefixIcon: Icon(
+                      Icons.search,
+                      color: colorScheme.onSurface.withValues(alpha: 0.6),
+                    ),
                     suffixIcon: IconButton(
-                      icon: const Icon(Icons.close),
+                      icon: Icon(
+                        Icons.close,
+                        color: colorScheme.onSurface.withValues(alpha: 0.6),
+                      ),
                       onPressed: () => Navigator.pop(context),
                     ),
                     filled: true,
-                    fillColor: AppColors.backgroundSecondary,
+                    fillColor: colorScheme.surface,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide.none,
@@ -161,10 +174,7 @@ class HomeScreen extends ConsumerWidget {
                   controller: scrollController,
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   children: [
-                    Text(
-                      'Búsquedas populares',
-                      style: AppTextStyles.labelLarge,
-                    ),
+                    Text('Búsquedas populares', style: textTheme.labelLarge),
                     const SizedBox(height: 12),
                     Wrap(
                       spacing: 8,
@@ -262,7 +272,7 @@ class _SectionHeader extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(title, style: AppTextStyles.h4),
+          Text(title, style: Theme.of(context).textTheme.headlineSmall),
           if (onViewAll != null)
             TextButton(onPressed: onViewAll, child: const Text('Ver todo')),
         ],
@@ -293,7 +303,11 @@ class _FeaturedProducts extends ConsumerWidget {
             itemBuilder: (context, index) {
               return SizedBox(
                 width: 160,
-                child: ProductCard(product: products[index], isCompact: true),
+                child: ProductCard(
+                  product: products[index],
+                  isCompact: true,
+                  heroTag: 'home-featured-${products[index].id}-$index',
+                ),
               );
             },
           ),
@@ -309,6 +323,8 @@ class _FeaturedProducts extends ConsumerWidget {
 class _CategoriesGrid extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     final categoriesAsync = ref.watch(categoriesProvider);
 
     return categoriesAsync.when(
@@ -327,8 +343,9 @@ class _CategoriesGrid extends ConsumerWidget {
                 child: Container(
                   width: 100,
                   decoration: BoxDecoration(
-                    color: AppColors.backgroundSecondary,
+                    color: colorScheme.surface,
                     borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Theme.of(context).dividerColor),
                   ),
                   alignment: Alignment.center,
                   child: Column(
@@ -337,12 +354,14 @@ class _CategoriesGrid extends ConsumerWidget {
                       Icon(
                         _getCategoryIcon(category.slug),
                         size: 32,
-                        color: AppColors.primary,
+                        color: colorScheme.primary,
                       ),
                       const SizedBox(height: 8),
                       Text(
                         category.name,
-                        style: AppTextStyles.labelMedium,
+                        style: textTheme.labelMedium?.copyWith(
+                          color: colorScheme.onSurface,
+                        ),
                         textAlign: TextAlign.center,
                       ),
                     ],
@@ -403,7 +422,10 @@ class _RecentProducts extends ConsumerWidget {
             ),
             itemCount: products.length,
             itemBuilder: (context, index) {
-              return ProductCard(product: products[index]);
+              return ProductCard(
+                product: products[index],
+                heroTag: 'home-recent-${products[index].id}-$index',
+              );
             },
           ),
         );

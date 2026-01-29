@@ -15,6 +15,8 @@ class OrdersScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     final ordersAsync = ref.watch(userOrdersProvider);
 
     return Scaffold(
@@ -44,7 +46,7 @@ class OrdersScreen extends ConsumerWidget {
             children: [
               Icon(Icons.error_outline, size: 48, color: AppColors.error),
               const SizedBox(height: 16),
-              Text('Error al cargar pedidos', style: AppTextStyles.bodyMedium),
+              Text('Error al cargar pedidos', style: textTheme.bodyMedium),
               const SizedBox(height: 8),
               ElevatedButton(
                 onPressed: () => ref.invalidate(userOrdersProvider),
@@ -99,11 +101,13 @@ class _OrderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: AppColors.border),
+        side: BorderSide(color: Theme.of(context).dividerColor),
       ),
       child: InkWell(
         onTap: () => context.push('/order/${order.id}'),
@@ -117,7 +121,7 @@ class _OrderCard extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Pedido #${order.id}', style: AppTextStyles.labelLarge),
+                  Text('Pedido #${order.id}', style: textTheme.labelLarge),
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 12,
@@ -156,7 +160,7 @@ class _OrderCard extends StatelessWidget {
                   Icon(
                     Icons.calendar_today,
                     size: 14,
-                    color: AppColors.textSecondary,
+                    color: colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
                   const SizedBox(width: 6),
                   Text(
@@ -164,8 +168,8 @@ class _OrderCard extends StatelessWidget {
                       'dd MMM yyyy, HH:mm',
                       'es_ES',
                     ).format(order.createdAt),
-                    style: AppTextStyles.bodySmall.copyWith(
-                      color: AppColors.textSecondary,
+                    style: textTheme.bodySmall?.copyWith(
+                      color: colorScheme.onSurface.withValues(alpha: 0.7),
                     ),
                   ),
                 ],
@@ -178,8 +182,8 @@ class _OrderCard extends StatelessWidget {
                   order.items.length == 1
                       ? '${order.items.first.productName}${order.items.first.size != null ? ' - ${order.items.first.size}' : ''}'
                       : '${order.items.length} artículos',
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: AppColors.textSecondary,
+                  style: textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurface.withValues(alpha: 0.7),
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -194,10 +198,13 @@ class _OrderCard extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Total', style: AppTextStyles.bodyMedium),
+                  Text('Total', style: textTheme.bodyMedium),
                   Text(
                     order.formattedTotal,
-                    style: AppTextStyles.price.copyWith(fontSize: 16),
+                    style: AppTextStyles.price.copyWith(
+                      fontSize: 16,
+                      color: colorScheme.onSurface,
+                    ),
                   ),
                 ],
               ),

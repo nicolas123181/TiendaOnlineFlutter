@@ -2,14 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'dart:convert';
 
 import '../../../../config/theme/app_colors.dart';
 import '../../../../config/theme/app_text_styles.dart';
 import '../../../../shared/widgets/custom_inputs.dart';
+import '../../../../config/constants/app_constants.dart';
 import '../../../auth/presentation/providers/auth_provider.dart'
     as auth_providers;
 import '../../../cart/presentation/providers/cart_provider.dart'
     as cart_providers;
+import '../../../cart/data/models/cart_item_model.dart';
 import '../../../profile/presentation/providers/addresses_provider.dart';
 import '../providers/checkout_provider.dart';
 
@@ -805,29 +809,60 @@ class _CompleteCheckoutScreenState
     CheckoutState state,
   ) async {
     try {
-      // Aquí iría la integración con Stripe
-      // Por ahora mostrar un diálogo de éxito
       if (!mounted) return;
 
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Próximamente'),
-          content: const Text(
-            'La integración con Stripe se completará en la siguiente fase. '
-            'El flujo de checkout está listo para conectar con la pasarela de pago.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-                context.go('/');
-              },
-              child: const Text('Entendido'),
-            ),
-          ],
-        ),
+      final cartNotifier = ref.read(cart_providers.cartProvider.notifier);
+      final items = (cartItems as List<CartItemModel>)
+          .map(
+            (cartItem) => {
+              'id': cartItem.productId,
+              'name': cartItem.name,
+              'price': cartItem.currentPrice,
+              'quantity': cartItem.quantity,
+              'size': cartItem.size,
+              'image': cartItem.imageUrl,
+            },
+          )
+          .toList();
+
+      final payload = {
+        'items': items,
+        'customer_email': state.customerEmail,
+        'customer_name': state.customerName,
+        'customer_address': state.customerAddress,
+        'customer_city': state.customerCity,
+        'customer_postal_code': state.customerPostalCode,
+        'customer_phone': state.customerPhone,
+        'shipping_method_id': state.selectedShippingMethod?.id ?? 0,
+        'shipping_cost': state.shippingCost,
+        'subtotal': subtotal,
+        'discount': state.couponDiscount,
+        'total': total,
+        'successUrl':
+            '${AppConstants.webApiBaseUrl}/checkout/exito?session_id={CHECKOUT_SESSION_ID}',
+        'cancelUrl': '${AppConstants.webApiBaseUrl}/checkout',
+      };
+
+      // Codificar payload en Base64 para evitar CORS
+      // El servidor hace redirect directo a Stripe
+      final jsonPayload = jsonEncode(payload);
+      final base64Payload = base64Encode(utf8.encode(jsonPayload));
+      final checkoutUrl =
+          '${AppConstants.webApiBaseUrl}/api/checkout-redirect?data=$base64Payload';
+
+      final uri = Uri.parse(checkoutUrl);
+      final launched = await launchUrl(
+        uri,
+        mode: LaunchMode.externalApplication,
       );
+
+      if (!launched) {
+        throw Exception('No se pudo abrir el checkout');
+      }
+
+      // El web checkout confirmará el pago y enviará emails.
+      // Limpiamos el carrito de manera optimista.
+      cartNotifier.clear();
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

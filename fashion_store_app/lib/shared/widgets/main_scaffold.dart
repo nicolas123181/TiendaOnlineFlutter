@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:badges/badges.dart' as badges;
 
-import '../../config/theme/app_colors.dart';
 import '../../features/cart/presentation/providers/cart_provider.dart';
 
 /// Scaffold principal con bottom navigation
@@ -54,15 +53,17 @@ class _MainScaffoldState extends ConsumerState<MainScaffold> {
   @override
   Widget build(BuildContext context) {
     final cartCount = ref.watch(cartItemCountProvider);
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
       body: widget.child,
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: colorScheme.surface,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
+              color: colorScheme.onSurface.withValues(alpha: 0.08),
               blurRadius: 10,
               offset: const Offset(0, -5),
             ),
@@ -82,6 +83,8 @@ class _MainScaffoldState extends ConsumerState<MainScaffold> {
                   item: item,
                   isSelected: isSelected,
                   cartCount: item.label == 'Tienda' ? cartCount : null,
+                  colorScheme: colorScheme,
+                  textTheme: textTheme,
                   onTap: () {
                     if (_currentIndex != index) {
                       setState(() {
@@ -104,11 +107,15 @@ class _MainScaffoldState extends ConsumerState<MainScaffold> {
     required _NavItem item,
     required bool isSelected,
     int? cartCount,
+    required ColorScheme colorScheme,
+    required TextTheme textTheme,
     required VoidCallback onTap,
   }) {
     Widget icon = Icon(
       isSelected ? item.activeIcon : item.icon,
-      color: isSelected ? AppColors.primary : AppColors.textSecondary,
+      color: isSelected
+          ? colorScheme.primary
+          : colorScheme.onSurface.withValues(alpha: 0.6),
       size: 24,
     );
 
@@ -123,9 +130,9 @@ class _MainScaffoldState extends ConsumerState<MainScaffold> {
             fontWeight: FontWeight.bold,
           ),
         ),
-        badgeStyle: const badges.BadgeStyle(
-          badgeColor: AppColors.accent,
-          padding: EdgeInsets.all(5),
+        badgeStyle: badges.BadgeStyle(
+          badgeColor: colorScheme.secondary,
+          padding: const EdgeInsets.all(5),
         ),
         position: badges.BadgePosition.topEnd(top: -8, end: -8),
         child: icon,
@@ -140,7 +147,7 @@ class _MainScaffoldState extends ConsumerState<MainScaffold> {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
           color: isSelected
-              ? AppColors.primary.withValues(alpha: 0.1)
+              ? colorScheme.primary.withValues(alpha: 0.15)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
         ),
@@ -151,11 +158,13 @@ class _MainScaffoldState extends ConsumerState<MainScaffold> {
             const SizedBox(height: 4),
             Text(
               item.label,
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                color: isSelected ? AppColors.primary : AppColors.textSecondary,
-              ),
+              style: (textTheme.labelSmall ?? const TextStyle(fontSize: 10))
+                  .copyWith(
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                    color: isSelected
+                        ? colorScheme.primary
+                        : colorScheme.onSurface.withValues(alpha: 0.6),
+                  ),
             ),
           ],
         ),

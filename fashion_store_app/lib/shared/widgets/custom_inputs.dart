@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../config/theme/app_colors.dart';
-import '../../config/theme/app_text_styles.dart';
 
 /// Campo de texto customizado
 class CustomTextField extends StatefulWidget {
@@ -72,7 +70,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
       mainAxisSize: MainAxisSize.min,
       children: [
         if (widget.label != null) ...[
-          Text(widget.label!, style: AppTextStyles.labelLarge),
+          Text(widget.label!, style: Theme.of(context).textTheme.labelLarge),
           const SizedBox(height: 8),
         ],
         TextFormField(
@@ -87,7 +85,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
           maxLines: widget.obscureText ? 1 : widget.maxLines,
           maxLength: widget.maxLength,
           autofocus: widget.autofocus,
-          style: AppTextStyles.bodyMedium,
+          style: Theme.of(context).textTheme.bodyMedium,
           inputFormatters: widget.inputFormatters,
           decoration: InputDecoration(
             hintText: widget.hint,
@@ -96,7 +94,9 @@ class _CustomTextFieldState extends State<CustomTextField> {
             prefixIcon: widget.prefixIcon != null
                 ? Icon(
                     widget.prefixIcon,
-                    color: AppColors.textSecondary,
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withValues(alpha: 0.6),
                     size: 20,
                   )
                 : null,
@@ -106,7 +106,9 @@ class _CustomTextFieldState extends State<CustomTextField> {
                       _obscureText
                           ? Icons.visibility_off_outlined
                           : Icons.visibility_outlined,
-                      color: AppColors.textSecondary,
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withValues(alpha: 0.6),
                       size: 20,
                     ),
                     onPressed: () {
@@ -151,13 +153,21 @@ class SearchTextField extends StatelessWidget {
     return TextField(
       controller: controller,
       autofocus: autofocus,
-      style: AppTextStyles.bodyMedium,
+      style: Theme.of(context).textTheme.bodyMedium,
       decoration: InputDecoration(
         hintText: hint,
-        prefixIcon: const Icon(Icons.search, color: AppColors.textSecondary),
+        prefixIcon: Icon(
+          Icons.search,
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+        ),
         suffixIcon: controller?.text.isNotEmpty == true
             ? IconButton(
-                icon: const Icon(Icons.close, color: AppColors.textSecondary),
+                icon: Icon(
+                  Icons.close,
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withValues(alpha: 0.6),
+                ),
                 onPressed: () {
                   controller?.clear();
                   onClear?.call();
@@ -165,7 +175,7 @@ class SearchTextField extends StatelessWidget {
               )
             : null,
         filled: true,
-        fillColor: AppColors.backgroundSecondary,
+        fillColor: Theme.of(context).colorScheme.surface,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
@@ -176,7 +186,7 @@ class SearchTextField extends StatelessWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.primary),
+          borderSide: BorderSide(color: Theme.of(context).colorScheme.primary),
         ),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
@@ -223,7 +233,10 @@ class QuantitySelector extends StatelessWidget {
         Container(
           width: size * 1.2,
           alignment: Alignment.center,
-          child: Text(quantity.toString(), style: AppTextStyles.labelLarge),
+          child: Text(
+            quantity.toString(),
+            style: Theme.of(context).textTheme.labelLarge,
+          ),
         ),
         _QuantityButton(
           icon: Icons.add,
@@ -255,7 +268,9 @@ class _QuantityButton extends StatelessWidget {
       height: size,
       decoration: BoxDecoration(
         border: Border.all(
-          color: onPressed != null ? AppColors.primary : AppColors.border,
+          color: onPressed != null
+              ? Theme.of(context).colorScheme.primary
+              : Theme.of(context).dividerColor,
         ),
         borderRadius: BorderRadius.circular(size / 4),
       ),
@@ -264,8 +279,8 @@ class _QuantityButton extends StatelessWidget {
           icon,
           size: size * 0.5,
           color: onPressed != null
-              ? AppColors.primary
-              : AppColors.textSecondary,
+              ? Theme.of(context).colorScheme.primary
+              : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
         ),
         onPressed: onPressed,
         padding: EdgeInsets.zero,

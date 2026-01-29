@@ -21,21 +21,32 @@ class EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 64, color: AppColors.textSecondary),
+            Icon(
+              icon,
+              size: 64,
+              color: colorScheme.onSurface.withValues(alpha: 0.6),
+            ),
             const SizedBox(height: 16),
-            Text(title, style: AppTextStyles.h4, textAlign: TextAlign.center),
+            Text(
+              title,
+              style: textTheme.headlineSmall,
+              textAlign: TextAlign.center,
+            ),
             if (subtitle != null) ...[
               const SizedBox(height: 8),
               Text(
                 subtitle!,
-                style: AppTextStyles.bodyMedium.copyWith(
-                  color: AppColors.textSecondary,
+                style: textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.onSurface.withValues(alpha: 0.7),
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -71,6 +82,9 @@ class ErrorState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -79,13 +93,17 @@ class ErrorState extends StatelessWidget {
           children: [
             Icon(icon, size: 64, color: AppColors.error),
             const SizedBox(height: 16),
-            Text(title, style: AppTextStyles.h4, textAlign: TextAlign.center),
+            Text(
+              title,
+              style: textTheme.headlineSmall,
+              textAlign: TextAlign.center,
+            ),
             if (message != null) ...[
               const SizedBox(height: 8),
               Text(
                 message!,
-                style: AppTextStyles.bodyMedium.copyWith(
-                  color: AppColors.textSecondary,
+                style: textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.onSurface.withValues(alpha: 0.7),
                 ),
                 textAlign: TextAlign.center,
               ),

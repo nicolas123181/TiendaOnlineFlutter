@@ -28,6 +28,16 @@ class ReturnRequest {
   });
 
   factory ReturnRequest.fromJson(Map<String, dynamic> json) {
+    final itemsFromReturnItems =
+      (json['return_items'] as List<dynamic>?)
+        ?.map((e) => ReturnItem.fromJson(e as Map<String, dynamic>))
+        .toList();
+
+    final itemsFromArray =
+      (json['items'] as List<dynamic>?)
+        ?.map((e) => ReturnItem.fromJson(e as Map<String, dynamic>))
+        .toList();
+
     return ReturnRequest(
       id: json['id'] as int,
       orderId: json['order_id'] as int,
@@ -35,15 +45,12 @@ class ReturnRequest {
       createdAt: DateTime.parse(json['created_at'] as String),
       status: json['status'] as String,
       reason: json['reason'] as String,
-      customerNotes: json['customer_notes'] as String?,
-      refundAmount: json['refund_amount'] as int,
+      customerNotes:
+        (json['customer_notes'] ?? json['reason_details']) as String?,
+      refundAmount: (json['refund_amount'] as int?) ?? 0,
       returnLabelUrl: json['return_label_url'] as String?,
       trackingNumber: json['tracking_number'] as String?,
-      items:
-          (json['return_items'] as List<dynamic>?)
-              ?.map((e) => ReturnItem.fromJson(e as Map<String, dynamic>))
-              .toList() ??
-          [],
+      items: itemsFromReturnItems ?? itemsFromArray ?? [],
     );
   }
 
@@ -53,12 +60,12 @@ class ReturnRequest {
     switch (status) {
       case 'pending':
         return 'Pendiente de revisión';
-      case 'approved':
-        return 'Aprobada';
+      case 'received':
+        return 'Recibida';
+      case 'refunded':
+        return 'Reembolsada';
       case 'rejected':
         return 'Rechazada';
-      case 'completed':
-        return 'Completada';
       case 'cancelled':
         return 'Cancelada';
       default:
@@ -91,14 +98,17 @@ class ReturnItem {
   });
 
   factory ReturnItem.fromJson(Map<String, dynamic> json) {
+    final refundPrice =
+        (json['refund_price'] as int?) ?? (json['price'] as int?) ?? 0;
+
     return ReturnItem(
-      id: json['id'] as int,
-      returnId: json['return_id'] as int,
-      orderItemId: json['order_item_id'] as int,
-      productName: json['product_name'] as String,
+      id: (json['id'] as int?) ?? 0,
+      returnId: (json['return_id'] as int?) ?? 0,
+      orderItemId: (json['order_item_id'] as int?) ?? 0,
+      productName: (json['product_name'] as String?) ?? 'Producto',
       size: json['size'] as String?,
-      quantity: json['quantity'] as int,
-      refundPrice: json['refund_price'] as int,
+      quantity: (json['quantity'] as int?) ?? 0,
+      refundPrice: refundPrice,
     );
   }
 
