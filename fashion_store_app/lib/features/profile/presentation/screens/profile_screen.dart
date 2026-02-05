@@ -112,6 +112,7 @@ class _ProfileContent extends ConsumerWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     return SingleChildScrollView(
+      key: const PageStorageKey<String>('profile-scroll'),
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -18,7 +20,6 @@ import '../../features/auth/presentation/screens/forgot_password_screen.dart';
 import '../../features/auth/presentation/providers/auth_provider.dart';
 import '../../features/profile/presentation/screens/profile_screen.dart';
 import '../../features/favorites/presentation/screens/favorites_screen.dart';
-import '../../features/categories/presentation/screens/categories_screen.dart';
 import '../../features/orders/presentation/screens/orders_screen.dart';
 import '../../features/orders/presentation/screens/order_detail_screen.dart';
 import '../../features/orders/presentation/screens/invoice_screen.dart';
@@ -38,7 +39,7 @@ final routerProvider = Provider<GoRouter>((ref) {
 
   return GoRouter(
     initialLocation: '/',
-    debugLogDiagnostics: true,
+    debugLogDiagnostics: kDebugMode,
 
     // Manejo global de errores
     errorBuilder: (context, state) =>
@@ -49,7 +50,6 @@ final routerProvider = Provider<GoRouter>((ref) {
       final isLoggedIn = authState.value != null;
       final isGoingToAuth = state.matchedLocation.startsWith('/auth');
       final isGoingToAdmin = state.matchedLocation.startsWith('/admin');
-      final isGoingToCheckout = state.matchedLocation.startsWith('/checkout');
 
       // Si va a admin y no está logueado o no es admin
       if (isGoingToAdmin) {
@@ -59,11 +59,6 @@ final routerProvider = Provider<GoRouter>((ref) {
         if (!isAdmin) {
           return '/'; // No tiene permisos de admin
         }
-      }
-
-      // Si va a checkout y no está logueado
-      if (isGoingToCheckout && !isLoggedIn) {
-        return '/auth/login?redirect=/checkout';
       }
 
       // Si va a auth pero ya está logueado
@@ -79,64 +74,62 @@ final routerProvider = Provider<GoRouter>((ref) {
       // ============================================
       // SHELL ROUTE - NAVEGACIÓN PRINCIPAL
       // ============================================
-      ShellRoute(
-        builder: (context, state, child) {
-          return _MainShell(child: child);
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, navigationShell) {
+          return _MainShell(navigationShell: navigationShell);
         },
-        routes: [
-          // Home
-          GoRoute(
-            path: '/',
-            name: 'home',
-            pageBuilder: (context, state) => CustomTransitionPage(
-              key: state.pageKey,
-              child: const HomeScreen(),
-              transitionsBuilder: _fadeTransition,
-            ),
+        branches: [
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/',
+                name: 'home',
+                pageBuilder: (context, state) => CustomTransitionPage(
+                  key: state.pageKey,
+                  child: const HomeScreen(),
+                  transitionsBuilder: _fadeTransition,
+                ),
+              ),
+            ],
           ),
-
-          // Productos
-          GoRoute(
-            path: '/products',
-            name: 'products',
-            pageBuilder: (context, state) => CustomTransitionPage(
-              key: state.pageKey,
-              child: const ProductsScreen(),
-              transitionsBuilder: _fadeTransition,
-            ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/products',
+                name: 'products',
+                pageBuilder: (context, state) => CustomTransitionPage(
+                  key: state.pageKey,
+                  child: const ProductsScreen(),
+                  transitionsBuilder: _fadeTransition,
+                ),
+              ),
+            ],
           ),
-
-          // Categorías
-          GoRoute(
-            path: '/categories',
-            name: 'categories',
-            pageBuilder: (context, state) => CustomTransitionPage(
-              key: state.pageKey,
-              child: const CategoriesScreen(),
-              transitionsBuilder: _fadeTransition,
-            ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/favorites',
+                name: 'favorites',
+                pageBuilder: (context, state) => CustomTransitionPage(
+                  key: state.pageKey,
+                  child: const FavoritesScreen(),
+                  transitionsBuilder: _fadeTransition,
+                ),
+              ),
+            ],
           ),
-
-          // Favoritos
-          GoRoute(
-            path: '/favorites',
-            name: 'favorites',
-            pageBuilder: (context, state) => CustomTransitionPage(
-              key: state.pageKey,
-              child: const FavoritesScreen(),
-              transitionsBuilder: _fadeTransition,
-            ),
-          ),
-
-          // Perfil
-          GoRoute(
-            path: '/profile',
-            name: 'profile',
-            pageBuilder: (context, state) => CustomTransitionPage(
-              key: state.pageKey,
-              child: const ProfileScreen(),
-              transitionsBuilder: _fadeTransition,
-            ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/profile',
+                name: 'profile',
+                pageBuilder: (context, state) => CustomTransitionPage(
+                  key: state.pageKey,
+                  child: const ProfileScreen(),
+                  transitionsBuilder: _fadeTransition,
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -182,18 +175,6 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
 
       // Categoría específica
-      GoRoute(
-        path: '/category/:slug',
-        name: 'category',
-        pageBuilder: (context, state) {
-          final slug = state.pathParameters['slug']!;
-          return CustomTransitionPage(
-            key: state.pageKey,
-            child: ProductsScreen(categorySlug: slug),
-            transitionsBuilder: _slideTransition,
-          );
-        },
-      ),
 
       // Carrito
       GoRoute(
@@ -436,31 +417,17 @@ Widget _slideFromBottomTransition(
 // SHELL PRINCIPAL
 // ============================================
 
-class _MainShell extends StatefulWidget {
-  final Widget child;
+class _MainShell extends StatelessWidget {
+  final StatefulNavigationShell navigationShell;
 
-  const _MainShell({required this.child});
-
-  @override
-  State<_MainShell> createState() => _MainShellState();
-}
-
-class _MainShellState extends State<_MainShell> {
-  int _currentIndex = 0;
-
-  static const _routes = [
-    '/',
-    '/products',
-    '/categories',
-    '/favorites',
-    '/profile',
-  ];
+  const _MainShell({required this.navigationShell});
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final currentIndex = navigationShell.currentIndex;
     return Scaffold(
-      body: widget.child,
+      body: navigationShell,
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           color: colorScheme.surface,
@@ -482,36 +449,29 @@ class _MainShellState extends State<_MainShell> {
                   icon: Icons.home_outlined,
                   activeIcon: Icons.home,
                   label: 'Inicio',
-                  isSelected: _currentIndex == 0,
-                  onTap: () => _onItemTapped(0),
+                  isSelected: currentIndex == 0,
+                  onTap: () => _onItemTapped(context, 0),
                 ),
                 _NavItem(
                   icon: Icons.grid_view_outlined,
                   activeIcon: Icons.grid_view,
                   label: 'Tienda',
-                  isSelected: _currentIndex == 1,
-                  onTap: () => _onItemTapped(1),
-                ),
-                _NavItem(
-                  icon: Icons.category_outlined,
-                  activeIcon: Icons.category,
-                  label: 'Categorías',
-                  isSelected: _currentIndex == 2,
-                  onTap: () => _onItemTapped(2),
+                  isSelected: currentIndex == 1,
+                  onTap: () => _onItemTapped(context, 1),
                 ),
                 _NavItem(
                   icon: Icons.favorite_outline,
                   activeIcon: Icons.favorite,
                   label: 'Favoritos',
-                  isSelected: _currentIndex == 3,
-                  onTap: () => _onItemTapped(3),
+                  isSelected: currentIndex == 2,
+                  onTap: () => _onItemTapped(context, 2),
                 ),
                 _NavItem(
                   icon: Icons.person_outline,
                   activeIcon: Icons.person,
                   label: 'Perfil',
-                  isSelected: _currentIndex == 4,
-                  onTap: () => _onItemTapped(4),
+                  isSelected: currentIndex == 3,
+                  onTap: () => _onItemTapped(context, 3),
                 ),
               ],
             ),
@@ -521,11 +481,12 @@ class _MainShellState extends State<_MainShell> {
     );
   }
 
-  void _onItemTapped(int index) {
-    if (_currentIndex != index) {
-      setState(() => _currentIndex = index);
-      context.go(_routes[index]);
-    }
+  void _onItemTapped(BuildContext context, int index) {
+    HapticFeedback.selectionClick();
+    navigationShell.goBranch(
+      index,
+      initialLocation: index == navigationShell.currentIndex,
+    );
   }
 }
 
@@ -548,11 +509,19 @@ class _NavItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+    final labelStyle = (textTheme.labelSmall ?? const TextStyle(fontSize: 10))
+        .copyWith(
+          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+          color: isSelected
+              ? colorScheme.primary
+              : colorScheme.onSurface.withValues(alpha: 0.6),
+        );
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOutCubic,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
           color: isSelected
@@ -563,23 +532,40 @@ class _NavItem extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              isSelected ? activeIcon : icon,
-              color: isSelected
-                  ? colorScheme.primary
-                  : colorScheme.onSurface.withValues(alpha: 0.6),
-              size: 24,
+            AnimatedScale(
+              scale: isSelected ? 1.08 : 1.0,
+              duration: const Duration(milliseconds: 220),
+              curve: Curves.easeOutCubic,
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 180),
+                switchInCurve: Curves.easeOutCubic,
+                switchOutCurve: Curves.easeInCubic,
+                transitionBuilder: (child, animation) => FadeTransition(
+                  opacity: animation,
+                  child: ScaleTransition(
+                    scale: Tween<double>(
+                      begin: 0.92,
+                      end: 1.0,
+                    ).animate(animation),
+                    child: child,
+                  ),
+                ),
+                child: Icon(
+                  isSelected ? activeIcon : icon,
+                  key: ValueKey<bool>(isSelected),
+                  color: isSelected
+                      ? colorScheme.primary
+                      : colorScheme.onSurface.withValues(alpha: 0.6),
+                  size: 24,
+                ),
+              ),
             ),
             const SizedBox(height: 4),
-            Text(
-              label,
-              style: (textTheme.labelSmall ?? const TextStyle(fontSize: 10))
-                  .copyWith(
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                    color: isSelected
-                        ? colorScheme.primary
-                        : colorScheme.onSurface.withValues(alpha: 0.6),
-                  ),
+            AnimatedDefaultTextStyle(
+              duration: const Duration(milliseconds: 220),
+              curve: Curves.easeOutCubic,
+              style: labelStyle,
+              child: Text(label),
             ),
           ],
         ),
@@ -648,7 +634,6 @@ class AppRoutes {
   }
 
   static String productDetail(String slug) => '/product/$slug';
-  static String category(String slug) => '/category/$slug';
   static String cart() => '/cart';
   static String checkout() => '/checkout';
   static String checkoutSuccess(int orderId) => '/checkout/success/$orderId';

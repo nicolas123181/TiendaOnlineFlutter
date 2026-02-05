@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../config/theme/app_colors.dart';
 import '../../../../config/theme/app_text_styles.dart';
+import '../../../../config/constants/app_constants.dart';
 import '../../../../shared/services/supabase_service.dart';
 import '../../data/models/invoice_model.dart';
 
@@ -44,10 +45,15 @@ class InvoiceScreen extends ConsumerWidget {
         title: const Text('Factura'),
         actions: [
           invoiceAsync.maybeWhen(
-            data: (invoice) => invoice?.pdfUrl != null
+            data: (invoice) => invoice != null
                 ? IconButton(
                     icon: const Icon(Icons.download),
-                    onPressed: () => _downloadPdf(invoice!.pdfUrl!),
+                    onPressed: () {
+                      final url =
+                          invoice.pdfUrl ??
+                          '${AppConstants.webApiBaseUrl}/api/invoice/${invoice.id}/pdf?download=true';
+                      _downloadPdf(url);
+                    },
                   )
                 : const SizedBox.shrink(),
             orElse: () => const SizedBox.shrink(),
@@ -109,19 +115,23 @@ class InvoiceScreen extends ConsumerWidget {
           _buildTotals(invoice),
           const SizedBox(height: 32),
 
-          // Botón descargar PDF
-          if (invoice.pdfUrl != null)
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: () => _downloadPdf(invoice.pdfUrl!),
-                icon: const Icon(Icons.picture_as_pdf),
-                label: const Text('Descargar PDF'),
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                ),
+          // Botón descargar PDF (usa pdfUrl si existe, si no, abre endpoint web para imprimir/guardar)
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () {
+                final url =
+                    invoice.pdfUrl ??
+                    '${AppConstants.webApiBaseUrl}/api/invoice/${invoice.id}/pdf?download=true';
+                _downloadPdf(url);
+              },
+              icon: const Icon(Icons.picture_as_pdf),
+              label: const Text('Descargar PDF'),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 16),
               ),
             ),
+          ),
         ],
       ),
     );

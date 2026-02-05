@@ -10,6 +10,7 @@ abstract class ProductRepository {
     String? categorySlug,
     String? searchQuery,
     bool? onlyOnSale,
+    bool? onlyInStock,
     bool? onlyFeatured,
     String sortBy = 'created_at',
     bool ascending = false,

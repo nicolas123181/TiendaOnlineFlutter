@@ -32,6 +32,8 @@ class _AdminProductFormScreenState
   DateTime? _saleEndsAt;
   List<String> _imageUrls = [];
   final List<XFile> _pendingImages = [];
+  String? _primaryImageUrl;
+  String? _primaryPendingPath;
   Map<String, int> _sizeStock = {};
   bool _isLoading = false;
 
@@ -59,6 +61,10 @@ class _AdminProductFormScreenState
         _selectedCategoryId = product['category_id'];
         _featured = product['featured'] ?? false;
         _imageUrls = List<String>.from(product['images'] ?? []);
+        if (_imageUrls.isNotEmpty) {
+          _primaryImageUrl = _imageUrls.first;
+          _primaryPendingPath = null;
+        }
 
         if (product['sale_price'] != null) {
           _salePriceController.text = ((product['sale_price'] as int) / 100.0)
@@ -121,11 +127,60 @@ class _AdminProductFormScreenState
   void _removeImage(int index, bool isPending) {
     setState(() {
       if (isPending) {
-        _pendingImages.removeAt(index);
+        final removed = _pendingImages.removeAt(index);
+        if (_primaryPendingPath == removed.path) {
+          _primaryPendingPath = null;
+          _primaryImageUrl = _imageUrls.isNotEmpty ? _imageUrls.first : null;
+        }
       } else {
-        _imageUrls.removeAt(index);
+        final removed = _imageUrls.removeAt(index);
+        if (_primaryImageUrl == removed) {
+          _primaryImageUrl = _imageUrls.isNotEmpty ? _imageUrls.first : null;
+          if (_primaryImageUrl == null && _pendingImages.isNotEmpty) {
+            _primaryPendingPath = _pendingImages.first.path;
+          }
+        }
       }
     });
+  }
+
+  void _setPrimaryFromUrl(String url) {
+    setState(() {
+      _primaryImageUrl = url;
+      _primaryPendingPath = null;
+      if (_imageUrls.contains(url)) {
+        _imageUrls.remove(url);
+        _imageUrls.insert(0, url);
+      }
+    });
+  }
+
+  void _setPrimaryFromPending(XFile file) {
+    setState(() {
+      _primaryPendingPath = file.path;
+      _primaryImageUrl = null;
+      final idx = _pendingImages.indexWhere((f) => f.path == file.path);
+      if (idx > 0) {
+        final item = _pendingImages.removeAt(idx);
+        _pendingImages.insert(0, item);
+      }
+    });
+  }
+
+  void _ensurePrimaryOrder() {
+    if (_primaryImageUrl != null && _imageUrls.contains(_primaryImageUrl)) {
+      _imageUrls.remove(_primaryImageUrl);
+      _imageUrls.insert(0, _primaryImageUrl!);
+    }
+    if (_primaryPendingPath != null) {
+      final idx = _pendingImages.indexWhere(
+        (f) => f.path == _primaryPendingPath,
+      );
+      if (idx > 0) {
+        final item = _pendingImages.removeAt(idx);
+        _pendingImages.insert(0, item);
+      }
+    }
   }
 
   Future<void> _saveProduct() async {
@@ -144,10 +199,30 @@ class _AdminProductFormScreenState
 
       // Subir imágenes pendientes
       if (_pendingImages.isNotEmpty) {
+        _ensurePrimaryOrder();
         final uploadedUrls = await productActions.uploadMultipleImages(
           _pendingImages,
         );
+
+        if (_primaryPendingPath != null) {
+          final idx = _pendingImages.indexWhere(
+            (f) => f.path == _primaryPendingPath,
+          );
+          if (idx >= 0 && idx < uploadedUrls.length) {
+            final primaryUrl = uploadedUrls.removeAt(idx);
+            _imageUrls.insert(0, primaryUrl);
+            _primaryImageUrl = primaryUrl;
+          }
+        }
+
         _imageUrls.addAll(uploadedUrls);
+      } else {
+        _ensurePrimaryOrder();
+      }
+
+      if (_primaryImageUrl != null && _imageUrls.contains(_primaryImageUrl)) {
+        _imageUrls.remove(_primaryImageUrl);
+        _imageUrls.insert(0, _primaryImageUrl!);
       }
 
       final price = (double.parse(_priceController.text) * 100).round();
@@ -386,6 +461,7 @@ class _AdminProductFormScreenState
                         runSpacing: 8,
                         children: [
                           ..._imageUrls.asMap().entries.map((entry) {
+                            final isPrimary = _primaryImageUrl == entry.value;
                             return Stack(
                               children: [
                                 ClipRRect(
@@ -395,6 +471,51 @@ class _AdminProductFormScreenState
                                     width: 100,
                                     height: 100,
                                     fit: BoxFit.cover,
+                                  ),
+                                ),
+                                Positioned(
+                                  bottom: 0,
+                                  left: 0,
+                                  child: GestureDetector(
+                                    onTap: () =>
+                                        _setPrimaryFromUrl(entry.value),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 6,
+                                        vertical: 4,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: isPrimary
+                                            ? Colors.green
+                                            : Colors.black54,
+                                        borderRadius: const BorderRadius.only(
+                                          topRight: Radius.circular(6),
+                                          bottomLeft: Radius.circular(8),
+                                        ),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(
+                                            isPrimary
+                                                ? Icons.star
+                                                : Icons.star_border,
+                                            size: 14,
+                                            color: Colors.white,
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            isPrimary
+                                                ? 'Principal'
+                                                : 'Hacer principal',
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 10,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
                                   ),
                                 ),
                                 Positioned(
@@ -413,6 +534,8 @@ class _AdminProductFormScreenState
                             );
                           }),
                           ..._pendingImages.asMap().entries.map((entry) {
+                            final isPrimary =
+                                _primaryPendingPath == entry.value.path;
                             return Stack(
                               children: [
                                 ClipRRect(
@@ -422,6 +545,51 @@ class _AdminProductFormScreenState
                                     width: 100,
                                     height: 100,
                                     fit: BoxFit.cover,
+                                  ),
+                                ),
+                                Positioned(
+                                  bottom: 0,
+                                  left: 0,
+                                  child: GestureDetector(
+                                    onTap: () =>
+                                        _setPrimaryFromPending(entry.value),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 6,
+                                        vertical: 4,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: isPrimary
+                                            ? Colors.green
+                                            : Colors.black54,
+                                        borderRadius: const BorderRadius.only(
+                                          topRight: Radius.circular(6),
+                                          bottomLeft: Radius.circular(8),
+                                        ),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(
+                                            isPrimary
+                                                ? Icons.star
+                                                : Icons.star_border,
+                                            size: 14,
+                                            color: Colors.white,
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            isPrimary
+                                                ? 'Principal'
+                                                : 'Hacer principal',
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 10,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
                                   ),
                                 ),
                                 Positioned(

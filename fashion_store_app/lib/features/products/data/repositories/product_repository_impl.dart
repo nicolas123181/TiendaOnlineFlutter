@@ -20,6 +20,7 @@ class ProductRepositoryImpl implements ProductRepository {
     String? categorySlug,
     String? searchQuery,
     bool? onlyOnSale,
+    bool? onlyInStock,
     bool? onlyFeatured,
     String sortBy = 'created_at',
     bool ascending = false,
@@ -50,6 +51,10 @@ class ProductRepositoryImpl implements ProductRepository {
 
       if (onlyOnSale == true) {
         query = query.eq('is_on_sale', true);
+      }
+
+      if (onlyInStock == true) {
+        query = query.gt('stock', 0);
       }
 
       if (onlyFeatured == true) {

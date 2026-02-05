@@ -144,6 +144,7 @@ class StorageKeys {
   static const String onboardingCompleted = 'vantage_onboarding';
   static const String lastSyncTime = 'vantage_last_sync';
   static const String themeMode = 'vantage_theme_mode';
+  static const String pendingCheckoutReload = 'vantage_pending_checkout_reload';
 }
 
 /// Provider del servicio de almacenamiento local

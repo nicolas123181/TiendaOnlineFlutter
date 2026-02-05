@@ -1,9 +1,13 @@
 // Pantallas adicionales del Admin - Cupones, Usuarios, Newsletter
 
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 
+import '../../../../config/constants/app_constants.dart';
 import '../../../../config/theme/app_colors.dart';
 import '../../../../config/theme/app_text_styles.dart';
 import '../providers/coupons_provider.dart';
@@ -475,7 +479,10 @@ class AdminNewsletterScreen extends ConsumerWidget {
           IconButton(
             icon: const Icon(Icons.send),
             onPressed: () {
-              // TODO: Implementar envío de newsletter
+              showDialog(
+                context: context,
+                builder: (context) => const _SendNewsletterDialog(),
+              );
             },
           ),
         ],
@@ -520,5 +527,163 @@ class AdminNewsletterScreen extends ConsumerWidget {
         error: (err, stack) => Center(child: Text('Error: $err')),
       ),
     );
+  }
+}
+
+class _SendNewsletterDialog extends ConsumerStatefulWidget {
+  const _SendNewsletterDialog();
+
+  @override
+  ConsumerState<_SendNewsletterDialog> createState() =>
+      _SendNewsletterDialogState();
+}
+
+class _SendNewsletterDialogState extends ConsumerState<_SendNewsletterDialog> {
+  final _formKey = GlobalKey<FormState>();
+  final _subjectController = TextEditingController();
+  final _previewController = TextEditingController();
+  final _contentController = TextEditingController();
+  bool _isSending = false;
+
+  @override
+  void dispose() {
+    _subjectController.dispose();
+    _previewController.dispose();
+    _contentController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Enviar Newsletter'),
+      content: SingleChildScrollView(
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextFormField(
+                controller: _subjectController,
+                decoration: const InputDecoration(
+                  labelText: 'Asunto *',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'El asunto es obligatorio';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _previewController,
+                decoration: const InputDecoration(
+                  labelText: 'Preview (opcional)',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _contentController,
+                minLines: 6,
+                maxLines: 10,
+                decoration: const InputDecoration(
+                  labelText: 'Contenido *',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'El contenido es obligatorio';
+                  }
+                  return null;
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _isSending ? null : () => Navigator.pop(context),
+          child: const Text('Cancelar'),
+        ),
+        ElevatedButton.icon(
+          onPressed: _isSending ? null : _sendNewsletter,
+          icon: _isSending
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.send),
+          label: Text(_isSending ? 'Enviando...' : 'Enviar'),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _sendNewsletter() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isSending = true);
+
+    try {
+      final response = await http.post(
+        Uri.parse('${AppConstants.webApiBaseUrl}/api/admin/send-newsletter'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'subject': _subjectController.text.trim(),
+          'preview': _previewController.text.trim(),
+          'content': _contentController.text.trim(),
+        }),
+      );
+
+      if (!mounted) return;
+
+      if (response.statusCode == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('¡Newsletter enviado correctamente!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.pop(context);
+      } else {
+        final errorText = response.body.isNotEmpty
+            ? _extractNewsletterError(response.body)
+            : 'Error ${response.statusCode}';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al enviar: $errorText'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSending = false);
+      }
+    }
+  }
+
+  String _extractNewsletterError(String body) {
+    try {
+      final decoded = jsonDecode(body);
+      if (decoded is Map<String, dynamic>) {
+        final error = decoded['error']?.toString();
+        if (error != null && error.isNotEmpty) return error;
+        final message = decoded['message']?.toString();
+        if (message != null && message.isNotEmpty) return message;
+      }
+    } catch (_) {}
+    return body;
   }
 }

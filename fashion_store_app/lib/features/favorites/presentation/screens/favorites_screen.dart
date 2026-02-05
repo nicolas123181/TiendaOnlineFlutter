@@ -9,13 +9,60 @@ import '../../../../config/theme/app_colors.dart';
 import '../../../../config/theme/app_text_styles.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../providers/wishlist_provider.dart';
+import '../../data/models/wishlist_item_model.dart';
 
 /// Pantalla de favoritos (wishlist)
-class FavoritesScreen extends ConsumerWidget {
+class FavoritesScreen extends ConsumerStatefulWidget {
   const FavoritesScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<FavoritesScreen> createState() => _FavoritesScreenState();
+}
+
+class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
+  String? _lastPrecacheKey;
+  late final ProviderSubscription<AsyncValue<List<WishlistItemModel>>>
+  _wishlistSub;
+
+  @override
+  void initState() {
+    super.initState();
+    _wishlistSub = ref.listenManual<AsyncValue<List<WishlistItemModel>>>(
+      wishlistProvider,
+      (previous, next) => next.whenData(_precacheWishlistImages),
+    );
+  }
+
+  @override
+  void dispose() {
+    _wishlistSub.close();
+    super.dispose();
+  }
+
+  void _precacheWishlistImages(List<WishlistItemModel> items) {
+    if (!mounted) return;
+    final images = items
+        .map((item) => item.firstImage)
+        .whereType<String>()
+        .where((url) => url.trim().isNotEmpty)
+        .take(6)
+        .toList();
+
+    if (images.isEmpty) return;
+    final key = images.join('|');
+    if (key == _lastPrecacheKey) return;
+    _lastPrecacheKey = key;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      for (final url in images) {
+        precacheImage(CachedNetworkImageProvider(url), context);
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final isAuthenticated = ref.watch(isAuthenticatedProvider);
@@ -82,7 +129,9 @@ class FavoritesScreen extends ConsumerWidget {
           }
 
           return ListView.builder(
+            key: const PageStorageKey<String>('favorites-list'),
             padding: const EdgeInsets.all(16),
+            cacheExtent: 600,
             itemCount: items.length,
             itemBuilder: (context, index) {
               final item = items[index];

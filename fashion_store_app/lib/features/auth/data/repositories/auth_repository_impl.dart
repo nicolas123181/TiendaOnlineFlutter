@@ -49,7 +49,7 @@ class AuthRepositoryImpl implements AuthRepository {
 
       // Verificar si es admin
       final isAdmin = await _checkAdminStatus(email);
-      print('👤 Es admin: $isAdmin');
+      print('Es admin: $isAdmin');
 
       // Obtener datos del metadata de auth.users
       final metadata = response.user!.userMetadata ?? {};

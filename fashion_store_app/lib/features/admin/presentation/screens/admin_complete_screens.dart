@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
+import 'package:url_launcher/url_launcher.dart';
 import 'dart:convert';
 
 import '../../../../config/theme/app_colors.dart';
@@ -176,24 +177,7 @@ class _InvoiceCardComplete extends StatelessWidget {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      if (invoice.pdfUrl != null)
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.picture_as_pdf,
-                              color: Colors.red[400],
-                              size: 16,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              'PDF disponible',
-                              style: TextStyle(
-                                color: Colors.red[400],
-                                fontSize: 11,
-                              ),
-                            ),
-                          ],
-                        ),
+                      const SizedBox.shrink(),
                     ],
                   ),
                 ],
@@ -234,12 +218,44 @@ class _InvoiceCardComplete extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 24),
-              Text('Factura ${invoice.invoiceNumber}', style: AppTextStyles.h3),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Factura ${invoice.invoiceNumber}',
+                      style: AppTextStyles.h3,
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: invoice.pdfUrl != null
+                        ? 'Descargar PDF'
+                        : 'Abrir factura',
+                    icon: Icon(
+                      Icons.download,
+                      color: invoice.pdfUrl != null
+                          ? Colors.red[400]
+                          : Colors.blue,
+                    ),
+                    onPressed: () async {
+                      final url =
+                          invoice.pdfUrl ??
+                          '${AppConstants.webApiBaseUrl}/api/invoice/${invoice.id}/pdf?download=true';
+                      final uri = Uri.parse(url);
+                      if (await canLaunchUrl(uri)) {
+                        await launchUrl(
+                          uri,
+                          mode: LaunchMode.externalApplication,
+                        );
+                      }
+                    },
+                  ),
+                ],
+              ),
               const SizedBox(height: 24),
 
               // Datos empresa
               _DetailSection(
-                title: '🏢 Datos de la Empresa',
+                title: 'Datos de la Empresa',
                 children: [
                   _DetailRow('Empresa', invoice.companyName),
                   if (invoice.companyAddress != null)
@@ -254,7 +270,7 @@ class _InvoiceCardComplete extends StatelessWidget {
 
               // Datos cliente
               _DetailSection(
-                title: '👤 Datos del Cliente',
+                title: 'Datos del Cliente',
                 children: [
                   _DetailRow('Nombre', invoice.customerName),
                   _DetailRow('Email', invoice.customerEmail),
@@ -273,7 +289,7 @@ class _InvoiceCardComplete extends StatelessWidget {
 
               // Desglose
               _DetailSection(
-                title: '💰 Desglose',
+                title: 'Desglose',
                 children: [
                   _DetailRow(
                     'Subtotal',
@@ -304,7 +320,7 @@ class _InvoiceCardComplete extends StatelessWidget {
 
               // Info adicional
               _DetailSection(
-                title: '📋 Información Adicional',
+                title: 'Información Adicional',
                 children: [
                   _DetailRow('Estado', invoice.statusLabel),
                   if (invoice.paymentMethod != null)
@@ -1256,7 +1272,7 @@ class _AdminNewsletterScreenCompleteState
     try {
       // Llamar al API de la web para enviar el newsletter
       final response = await http.post(
-        Uri.parse('${AppConstants.webApiBaseUrl}/api/admin/newsletter/send'),
+        Uri.parse('${AppConstants.webApiBaseUrl}/api/admin/send-newsletter'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'subject': _subjectController.text,
@@ -1279,7 +1295,9 @@ class _AdminNewsletterScreenCompleteState
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Error al enviar: ${response.body}'),
+              content: Text(
+                'Error al enviar: ${_extractNewsletterError(response.body)}',
+              ),
               backgroundColor: Colors.red,
             ),
           );
@@ -1296,6 +1314,19 @@ class _AdminNewsletterScreenCompleteState
         setState(() => _isSending = false);
       }
     }
+  }
+
+  String _extractNewsletterError(String body) {
+    try {
+      final decoded = jsonDecode(body);
+      if (decoded is Map<String, dynamic>) {
+        final error = decoded['error']?.toString();
+        if (error != null && error.isNotEmpty) return error;
+        final message = decoded['message']?.toString();
+        if (message != null && message.isNotEmpty) return message;
+      }
+    } catch (_) {}
+    return body;
   }
 }
 

@@ -31,12 +31,6 @@ class _MainScaffoldState extends ConsumerState<MainScaffold> {
       path: '/products',
     ),
     _NavItem(
-      icon: Icons.category_outlined,
-      activeIcon: Icons.category,
-      label: 'Categorías',
-      path: '/categories',
-    ),
-    _NavItem(
       icon: Icons.favorite_outline,
       activeIcon: Icons.favorite,
       label: 'Favoritos',

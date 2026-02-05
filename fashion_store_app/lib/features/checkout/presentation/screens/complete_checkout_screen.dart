@@ -15,6 +15,7 @@ import '../../../cart/presentation/providers/cart_provider.dart'
     as cart_providers;
 import '../../../cart/data/models/cart_item_model.dart';
 import '../../../profile/presentation/providers/addresses_provider.dart';
+import '../../../../shared/services/local_storage_service.dart';
 import '../providers/checkout_provider.dart';
 
 /// Pantalla completa de checkout con pasos
@@ -29,10 +30,39 @@ class CompleteCheckoutScreen extends ConsumerStatefulWidget {
 class _CompleteCheckoutScreenState
     extends ConsumerState<CompleteCheckoutScreen> {
   final _formKey = GlobalKey<FormState>();
+  late final TextEditingController _nameController;
+  late final TextEditingController _emailController;
+  late final TextEditingController _phoneController;
+  late final TextEditingController _addressController;
+  late final TextEditingController _cityController;
+  late final TextEditingController _postalCodeController;
+  late final ProviderSubscription<CheckoutState> _checkoutSub;
 
   @override
   void initState() {
     super.initState();
+    final state = ref.read(checkoutProvider);
+    _nameController = TextEditingController(text: state.customerName);
+    _emailController = TextEditingController(text: state.customerEmail);
+    _phoneController = TextEditingController(text: state.customerPhone);
+    _addressController = TextEditingController(text: state.customerAddress);
+    _cityController = TextEditingController(text: state.customerCity);
+    _postalCodeController = TextEditingController(
+      text: state.customerPostalCode,
+    );
+
+    _checkoutSub = ref.listenManual<CheckoutState>(checkoutProvider, (
+      previous,
+      next,
+    ) {
+      _syncController(_nameController, next.customerName);
+      _syncController(_emailController, next.customerEmail);
+      _syncController(_phoneController, next.customerPhone);
+      _syncController(_addressController, next.customerAddress);
+      _syncController(_cityController, next.customerCity);
+      _syncController(_postalCodeController, next.customerPostalCode);
+    });
+
     // Prefill user data if logged in
     Future.microtask(() {
       final authState = ref.read(auth_providers.authStateProvider);
@@ -40,6 +70,27 @@ class _CompleteCheckoutScreenState
         ref.read(checkoutProvider.notifier).prefillUserData(authState.value!);
       }
     });
+  }
+
+  @override
+  void dispose() {
+    _checkoutSub.close();
+    _nameController.dispose();
+    _emailController.dispose();
+    _phoneController.dispose();
+    _addressController.dispose();
+    _cityController.dispose();
+    _postalCodeController.dispose();
+    super.dispose();
+  }
+
+  void _syncController(TextEditingController controller, String value) {
+    if (controller.text == value) return;
+    controller.value = controller.value.copyWith(
+      text: value,
+      selection: TextSelection.collapsed(offset: value.length),
+      composing: TextRange.empty,
+    );
   }
 
   @override
@@ -260,7 +311,7 @@ class _CompleteCheckoutScreenState
             const SizedBox(height: 16),
             CustomTextField(
               label: 'Nombre Completo *',
-              initialValue: state.customerName,
+              controller: _nameController,
               onChanged: (value) =>
                   ref.read(checkoutProvider.notifier).updateCustomerName(value),
               validator: (value) =>
@@ -269,7 +320,7 @@ class _CompleteCheckoutScreenState
             const SizedBox(height: 16),
             CustomTextField(
               label: 'Email *',
-              initialValue: state.customerEmail,
+              controller: _emailController,
               keyboardType: TextInputType.emailAddress,
               onChanged: (value) => ref
                   .read(checkoutProvider.notifier)
@@ -283,7 +334,7 @@ class _CompleteCheckoutScreenState
             const SizedBox(height: 16),
             CustomTextField(
               label: 'Teléfono',
-              initialValue: state.customerPhone,
+              controller: _phoneController,
               keyboardType: TextInputType.phone,
               onChanged: (value) => ref
                   .read(checkoutProvider.notifier)
@@ -292,7 +343,7 @@ class _CompleteCheckoutScreenState
             const SizedBox(height: 16),
             CustomTextField(
               label: 'Dirección *',
-              initialValue: state.customerAddress,
+              controller: _addressController,
               onChanged: (value) => ref
                   .read(checkoutProvider.notifier)
                   .updateCustomerAddress(value),
@@ -305,7 +356,7 @@ class _CompleteCheckoutScreenState
                 Expanded(
                   child: CustomTextField(
                     label: 'Ciudad *',
-                    initialValue: state.customerCity,
+                    controller: _cityController,
                     onChanged: (value) => ref
                         .read(checkoutProvider.notifier)
                         .updateCustomerCity(value),
@@ -317,7 +368,7 @@ class _CompleteCheckoutScreenState
                 Expanded(
                   child: CustomTextField(
                     label: 'Código Postal *',
-                    initialValue: state.customerPostalCode,
+                    controller: _postalCodeController,
                     keyboardType: TextInputType.number,
                     onChanged: (value) => ref
                         .read(checkoutProvider.notifier)
@@ -859,6 +910,9 @@ class _CompleteCheckoutScreenState
       if (!launched) {
         throw Exception('No se pudo abrir el checkout');
       }
+
+      final storage = ref.read(localStorageServiceProvider);
+      await storage.setBool(StorageKeys.pendingCheckoutReload, true);
 
       // El web checkout confirmará el pago y enviará emails.
       // Limpiamos el carrito de manera optimista.

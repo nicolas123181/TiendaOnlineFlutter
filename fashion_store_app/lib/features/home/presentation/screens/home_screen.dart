@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 import '../../../../config/theme/app_colors.dart';
 import '../../../../config/theme/app_text_styles.dart';
@@ -9,16 +10,67 @@ import '../../../../shared/widgets/empty_states.dart';
 import '../../../../shared/providers/theme_provider.dart';
 import '../../../products/presentation/providers/products_provider.dart';
 import '../../../settings/presentation/providers/settings_provider.dart';
-import '../../../categories/presentation/providers/categories_provider.dart';
 import '../../../products/presentation/widgets/product_card.dart';
 import '../../../products/presentation/widgets/flash_offers_section.dart';
+import '../../../products/data/models/product_model.dart';
 
 /// Pantalla principal (Home)
-class HomeScreen extends ConsumerWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends ConsumerState<HomeScreen> {
+  static const _recentFilter = ProductsFilter(limit: 6);
+  String? _lastPrecacheKey;
+  late final ProviderSubscription<AsyncValue<List<ProductModel>>> _featuredSub;
+  late final ProviderSubscription<AsyncValue<List<ProductModel>>> _recentSub;
+
+  @override
+  void initState() {
+    super.initState();
+    _featuredSub = ref.listenManual<AsyncValue<List<ProductModel>>>(
+      featuredProductsProvider,
+      (previous, next) => next.whenData(_precacheImages),
+    );
+    _recentSub = ref.listenManual<AsyncValue<List<ProductModel>>>(
+      productsProvider(_recentFilter),
+      (previous, next) => next.whenData(_precacheImages),
+    );
+  }
+
+  @override
+  void dispose() {
+    _featuredSub.close();
+    _recentSub.close();
+    super.dispose();
+  }
+
+  void _precacheImages(List<ProductModel> products) {
+    if (!mounted) return;
+    final images = products
+        .take(4)
+        .map((product) => product.mainImage)
+        .where((url) => url.trim().isNotEmpty)
+        .toList();
+
+    if (images.isEmpty) return;
+    final key = images.join('|');
+    if (key == _lastPrecacheKey) return;
+    _lastPrecacheKey = key;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      for (final url in images) {
+        precacheImage(CachedNetworkImageProvider(url), context);
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
@@ -30,6 +82,8 @@ class HomeScreen extends ConsumerWidget {
           ref.invalidate(flashOffersEnabledProvider);
         },
         child: CustomScrollView(
+          key: const PageStorageKey<String>('home-scroll'),
+          cacheExtent: 800,
           slivers: [
             // App Bar con logo
             SliverAppBar(
@@ -84,15 +138,6 @@ class HomeScreen extends ConsumerWidget {
               ),
             ),
             SliverToBoxAdapter(child: _FeaturedProducts()),
-
-            // Categorías
-            SliverToBoxAdapter(
-              child: _SectionHeader(
-                title: 'Categorías',
-                onViewAll: () => context.push('/categories'),
-              ),
-            ),
-            SliverToBoxAdapter(child: _CategoriesGrid()),
 
             // Productos recientes
             SliverToBoxAdapter(
@@ -303,10 +348,12 @@ class _FeaturedProducts extends ConsumerWidget {
             itemBuilder: (context, index) {
               return SizedBox(
                 width: 160,
-                child: ProductCard(
-                  product: products[index],
-                  isCompact: true,
-                  heroTag: 'home-featured-${products[index].id}-$index',
+                child: RepaintBoundary(
+                  child: ProductCard(
+                    product: products[index],
+                    isCompact: true,
+                    heroTag: 'home-featured-${products[index].id}-$index',
+                  ),
                 ),
               );
             },
@@ -316,84 +363,6 @@ class _FeaturedProducts extends ConsumerWidget {
       loading: () => const CarouselShimmer(),
       error: (error, _) => Center(child: Text('Error: $error')),
     );
-  }
-}
-
-/// Grid de categorías
-class _CategoriesGrid extends ConsumerWidget {
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-    final categoriesAsync = ref.watch(categoriesProvider);
-
-    return categoriesAsync.when(
-      data: (categories) {
-        return SizedBox(
-          height: 120,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            itemCount: categories.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 12),
-            itemBuilder: (context, index) {
-              final category = categories[index];
-              return GestureDetector(
-                onTap: () => context.push('/category/${category.slug}'),
-                child: Container(
-                  width: 100,
-                  decoration: BoxDecoration(
-                    color: colorScheme.surface,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Theme.of(context).dividerColor),
-                  ),
-                  alignment: Alignment.center,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        _getCategoryIcon(category.slug),
-                        size: 32,
-                        color: colorScheme.primary,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        category.name,
-                        style: textTheme.labelMedium?.copyWith(
-                          color: colorScheme.onSurface,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
-        );
-      },
-      loading: () => const CarouselShimmer(height: 120),
-      error: (error, _) => const SizedBox.shrink(),
-    );
-  }
-
-  IconData _getCategoryIcon(String slug) {
-    switch (slug) {
-      case 'camisas':
-        return Icons.dry_cleaning;
-      case 'camisetas':
-        return Icons.checkroom;
-      case 'pantalones':
-        return Icons.straighten;
-      case 'trajes':
-        return Icons.business_center;
-      case 'chalecos':
-        return Icons.layers;
-      case 'abrigos':
-        return Icons.ac_unit;
-      default:
-        return Icons.category;
-    }
   }
 }
 
@@ -422,9 +391,11 @@ class _RecentProducts extends ConsumerWidget {
             ),
             itemCount: products.length,
             itemBuilder: (context, index) {
-              return ProductCard(
-                product: products[index],
-                heroTag: 'home-recent-${products[index].id}-$index',
+              return RepaintBoundary(
+                child: ProductCard(
+                  product: products[index],
+                  heroTag: 'home-recent-${products[index].id}-$index',
+                ),
               );
             },
           ),

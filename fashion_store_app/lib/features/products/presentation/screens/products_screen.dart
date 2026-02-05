@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -9,6 +10,8 @@ import '../../../../shared/widgets/empty_states.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
 import '../providers/products_provider.dart';
 import '../widgets/product_card.dart';
+import '../../../categories/presentation/providers/categories_provider.dart';
+import '../../data/models/product_model.dart';
 
 /// Pantalla de listado de productos
 class ProductsScreen extends ConsumerStatefulWidget {
@@ -23,6 +26,7 @@ class ProductsScreen extends ConsumerStatefulWidget {
 class _ProductsScreenState extends ConsumerState<ProductsScreen> {
   final _searchController = TextEditingController();
   final _scrollController = ScrollController();
+  String? _lastPrecacheKey;
 
   @override
   void dispose() {
@@ -33,19 +37,39 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final filter = ProductsFilter(categorySlug: widget.categorySlug);
-    final productsAsync = ref.watch(productsProvider(filter));
+    final currentFilter = ref.watch(currentFilterProvider);
+    final effectiveFilter = currentFilter.copyWith(
+      categorySlug: widget.categorySlug ?? currentFilter.categorySlug,
+    );
+    final categoriesAsync = ref.watch(categoriesProvider);
+    final selectedCategorySlug = effectiveFilter.categorySlug;
+    final appBarTitle = selectedCategorySlug == null
+        ? 'TIENDA'
+        : categoriesAsync.maybeWhen(
+            data: (categories) {
+              String? resolvedName;
+              for (final category in categories) {
+                if (category.slug == selectedCategorySlug) {
+                  resolvedName = category.name;
+                  break;
+                }
+              }
+              final name = resolvedName ?? selectedCategorySlug;
+              return name.toUpperCase();
+            },
+            orElse: () => selectedCategorySlug.toUpperCase(),
+          );
+    final productsAsync = ref.watch(productsProvider(effectiveFilter));
 
     return Scaffold(
       appBar: CustomAppBar(
-        title: widget.categorySlug != null
-            ? widget.categorySlug!.toUpperCase()
-            : 'TIENDA',
+        title: appBarTitle,
         onSearchPressed: () => _showSearchSheet(context),
         additionalActions: [
           IconButton(
             icon: const Icon(Icons.filter_list),
-            onPressed: () => _showFilterSheet(context),
+            onPressed: () =>
+                _showFilterSheet(context, currentFilter: effectiveFilter),
           ),
         ],
       ),
@@ -61,12 +85,16 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
             );
           }
 
+          _precacheProductImages(products);
+
           return RefreshIndicator(
             onRefresh: () async {
-              ref.invalidate(productsProvider(filter));
+              ref.invalidate(productsProvider(effectiveFilter));
             },
             child: GridView.builder(
+              key: const PageStorageKey<String>('products-grid'),
               controller: _scrollController,
+              cacheExtent: 800,
               padding: const EdgeInsets.all(16),
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2,
@@ -76,9 +104,11 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
               ),
               itemCount: products.length,
               itemBuilder: (context, index) {
-                return ProductCard(
-                  product: products[index],
-                  heroTag: 'products-grid-${products[index].id}-$index',
+                return RepaintBoundary(
+                  child: ProductCard(
+                    product: products[index],
+                    heroTag: 'products-grid-${products[index].id}-$index',
+                  ),
                 );
               },
             ),
@@ -90,10 +120,31 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
         ),
         error: (error, _) => ErrorState(
           message: error.toString(),
-          onRetry: () => ref.invalidate(productsProvider(filter)),
+          onRetry: () => ref.invalidate(productsProvider(effectiveFilter)),
         ),
       ),
     );
+  }
+
+  void _precacheProductImages(List<ProductModel> products) {
+    if (!mounted) return;
+    final images = products
+        .take(6)
+        .map((product) => product.mainImage)
+        .where((url) => url.trim().isNotEmpty)
+        .toList();
+
+    if (images.isEmpty) return;
+    final key = images.join('|');
+    if (key == _lastPrecacheKey) return;
+    _lastPrecacheKey = key;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      for (final url in images) {
+        precacheImage(CachedNetworkImageProvider(url), context);
+      }
+    });
   }
 
   void _showSearchSheet(BuildContext context) {
@@ -140,67 +191,222 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
     );
   }
 
-  void _showFilterSheet(BuildContext context) {
+  void _showFilterSheet(
+    BuildContext context, {
+    required ProductsFilter currentFilter,
+  }) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.6,
-        decoration: const BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('Filtros', style: AppTextStyles.h4),
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Limpiar'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            Text('Ordenar por', style: AppTextStyles.labelLarge),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                _FilterChip(label: 'Más recientes', selected: true),
-                _FilterChip(label: 'Precio: menor a mayor'),
-                _FilterChip(label: 'Precio: mayor a menor'),
-                _FilterChip(label: 'Más vendidos'),
-              ],
-            ),
-            const SizedBox(height: 24),
-            Text('Filtrar', style: AppTextStyles.labelLarge),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                _FilterChip(label: 'En oferta'),
-                _FilterChip(label: 'En stock'),
-                _FilterChip(label: 'Destacados'),
-              ],
-            ),
-            const Spacer(),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('APLICAR FILTROS'),
-              ),
-            ),
-          ],
-        ),
-      ),
+      builder: (context) {
+        ProductsFilter tempFilter = currentFilter;
+
+        bool isSortSelected(String sortBy, bool ascending) {
+          return tempFilter.sortBy == sortBy &&
+              tempFilter.ascending == ascending;
+        }
+
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return Consumer(
+              builder: (context, ref, _) {
+                final categoriesAsync = ref.watch(categoriesProvider);
+
+                return Container(
+                  height: MediaQuery.of(context).size.height * 0.7,
+                  decoration: const BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(20),
+                    ),
+                  ),
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('Filtros', style: AppTextStyles.h4),
+                          TextButton(
+                            onPressed: () {
+                              setState(() {
+                                tempFilter = ProductsFilter(
+                                  categorySlug: widget.categorySlug,
+                                );
+                              });
+                              ref
+                                  .read(currentFilterProvider.notifier)
+                                  .updateFilter(tempFilter);
+                              Navigator.pop(context);
+                            },
+                            child: const Text('Limpiar'),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+                      Text('Ordenar por', style: AppTextStyles.labelLarge),
+                      const SizedBox(height: 12),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          _FilterChip(
+                            label: 'Más recientes',
+                            selected: isSortSelected('created_at', false),
+                            onSelected: (value) {
+                              if (!value) return;
+                              setState(() {
+                                tempFilter = tempFilter.copyWith(
+                                  sortBy: 'created_at',
+                                  ascending: false,
+                                );
+                              });
+                            },
+                          ),
+                          _FilterChip(
+                            label: 'Precio: menor a mayor',
+                            selected: isSortSelected('price', true),
+                            onSelected: (value) {
+                              if (!value) return;
+                              setState(() {
+                                tempFilter = tempFilter.copyWith(
+                                  sortBy: 'price',
+                                  ascending: true,
+                                );
+                              });
+                            },
+                          ),
+                          _FilterChip(
+                            label: 'Precio: mayor a menor',
+                            selected: isSortSelected('price', false),
+                            onSelected: (value) {
+                              if (!value) return;
+                              setState(() {
+                                tempFilter = tempFilter.copyWith(
+                                  sortBy: 'price',
+                                  ascending: false,
+                                );
+                              });
+                            },
+                          ),
+                          _FilterChip(
+                            label: 'Más vendidos',
+                            selected: false,
+                            onSelected: (_) {},
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+                      Text('Filtrar', style: AppTextStyles.labelLarge),
+                      const SizedBox(height: 12),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          _FilterChip(
+                            label: 'En oferta',
+                            selected: tempFilter.onlyOnSale == true,
+                            onSelected: (value) {
+                              setState(() {
+                                tempFilter = tempFilter.copyWith(
+                                  onlyOnSale: value ? true : null,
+                                );
+                              });
+                            },
+                          ),
+                          _FilterChip(
+                            label: 'En stock',
+                            selected: tempFilter.onlyInStock == true,
+                            onSelected: (value) {
+                              setState(() {
+                                tempFilter = tempFilter.copyWith(
+                                  onlyInStock: value ? true : null,
+                                );
+                              });
+                            },
+                          ),
+                          _FilterChip(
+                            label: 'Destacados',
+                            selected: tempFilter.onlyFeatured == true,
+                            onSelected: (value) {
+                              setState(() {
+                                tempFilter = tempFilter.copyWith(
+                                  onlyFeatured: value ? true : null,
+                                );
+                              });
+                            },
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+                      Text('Categorías', style: AppTextStyles.labelLarge),
+                      const SizedBox(height: 12),
+                      categoriesAsync.when(
+                        data: (categories) => Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            _FilterChip(
+                              label: 'Todas',
+                              selected: tempFilter.categorySlug == null,
+                              onSelected: (value) {
+                                if (!value) return;
+                                setState(() {
+                                  tempFilter = tempFilter.copyWith(
+                                    categorySlug: null,
+                                  );
+                                });
+                              },
+                            ),
+                            ...categories.map(
+                              (category) => _FilterChip(
+                                label: category.name,
+                                selected:
+                                    tempFilter.categorySlug == category.slug,
+                                onSelected: (value) {
+                                  if (!value) return;
+                                  setState(() {
+                                    tempFilter = tempFilter.copyWith(
+                                      categorySlug: category.slug,
+                                    );
+                                  });
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                        loading: () => const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 8),
+                          child: Center(child: CircularProgressIndicator()),
+                        ),
+                        error: (error, _) => Text(
+                          'No se pudieron cargar las categorías',
+                          style: AppTextStyles.bodySmall,
+                        ),
+                      ),
+                      const Spacer(),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            ref
+                                .read(currentFilterProvider.notifier)
+                                .updateFilter(tempFilter);
+                            Navigator.pop(context);
+                          },
+                          child: const Text('APLICAR FILTROS'),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            );
+          },
+        );
+      },
     );
   }
 }
@@ -208,17 +414,20 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
 class _FilterChip extends StatelessWidget {
   final String label;
   final bool selected;
+  final ValueChanged<bool>? onSelected;
 
-  const _FilterChip({required this.label, this.selected = false});
+  const _FilterChip({
+    required this.label,
+    this.selected = false,
+    this.onSelected,
+  });
 
   @override
   Widget build(BuildContext context) {
     return FilterChip(
       label: Text(label),
       selected: selected,
-      onSelected: (value) {
-        // TODO: Implementar filtro
-      },
+      onSelected: onSelected,
     );
   }
 }

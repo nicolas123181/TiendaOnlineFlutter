@@ -47,6 +47,20 @@ class _AddToCartButtonState extends ConsumerState<AddToCartButton>
     'XXL',
   ];
 
+  static const List<String> _sizeOrder = [
+    'XS',
+    'S',
+    'M',
+    'L',
+    'XL',
+    'XXL',
+    'XXXL',
+  ];
+
+  static final Map<String, int> _sizeOrderIndex = {
+    for (var i = 0; i < _sizeOrder.length; i++) _sizeOrder[i]: i,
+  };
+
   List<String> _resolveSizeOptions(Map<String, int>? sizesStock) {
     if (sizesStock != null && sizesStock.isNotEmpty) {
       final sizes = sizesStock.keys.toList();
@@ -56,6 +70,11 @@ class _AddToCartButtonState extends ConsumerState<AddToCartButton>
         if (ai != null && bi != null) return ai.compareTo(bi);
         if (ai != null) return -1;
         if (bi != null) return 1;
+        final aKey = _sizeOrderIndex[a.toUpperCase()];
+        final bKey = _sizeOrderIndex[b.toUpperCase()];
+        if (aKey != null && bKey != null) return aKey.compareTo(bKey);
+        if (aKey != null) return -1;
+        if (bKey != null) return 1;
         return a.compareTo(b);
       });
       return sizes;

@@ -3,12 +3,16 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter/foundation.dart';
 
 import 'config/theme/app_theme.dart';
 import 'config/router/app_router.dart';
 import 'shared/services/supabase_service.dart';
 import 'shared/services/local_storage_service.dart';
 import 'shared/providers/theme_provider.dart';
+import 'shared/utils/app_reload.dart';
+import 'features/products/presentation/providers/products_provider.dart';
+import 'features/categories/presentation/providers/categories_provider.dart';
 
 /// Punto de entrada de la aplicación VANTAGE
 void main() async {
@@ -68,17 +72,64 @@ void main() async {
 }
 
 /// Widget principal de la aplicación
-class VantageApp extends ConsumerWidget {
+class VantageApp extends ConsumerStatefulWidget {
   const VantageApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<VantageApp> createState() => _VantageAppState();
+}
+
+class _VantageAppState extends ConsumerState<VantageApp>
+    with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _handlePendingCheckoutReload();
+    }
+  }
+
+  Future<void> _handlePendingCheckoutReload() async {
+    final storage = ref.read(localStorageServiceProvider);
+    final shouldReload =
+        storage.getBool(StorageKeys.pendingCheckoutReload) ?? false;
+    if (!shouldReload) return;
+
+    await storage.setBool(StorageKeys.pendingCheckoutReload, false);
+
+    if (kIsWeb) {
+      reloadApp();
+      return;
+    }
+
+    ref.invalidate(productsProvider);
+    ref.invalidate(featuredProductsProvider);
+    ref.invalidate(saleProductsProvider);
+    ref.invalidate(productBySlugProvider);
+    ref.invalidate(productByIdProvider);
+    ref.invalidate(categoriesProvider);
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final router = ref.watch(routerProvider);
     final themeMode = ref.watch(themeModeProvider);
 
     return MaterialApp.router(
       title: 'VANTAGE',
       debugShowCheckedModeBanner: false,
+      restorationScopeId: 'vantage_app',
 
       // Tema
       theme: AppTheme.lightTheme,

@@ -243,16 +243,17 @@ class _CartSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final shippingCost = subtotal >= 10000 ? 0 : 500; // Envío gratis > 100€
     final total = subtotal + shippingCost;
 
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: colorScheme.surface,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 10,
             offset: const Offset(0, -5),
           ),
@@ -349,19 +350,20 @@ class _SummaryRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final labelStyle = (isTotal ? textTheme.titleMedium : textTheme.bodyMedium)
+        ?.copyWith(color: colorScheme.onSurface.withValues(alpha: 0.85));
+    final valueStyle =
+        (isTotal ? textTheme.headlineSmall : textTheme.labelLarge)?.copyWith(
+          color: valueColor ?? colorScheme.onSurface,
+        );
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          label,
-          style: isTotal ? AppTextStyles.labelLarge : AppTextStyles.bodyMedium,
-        ),
-        Text(
-          value,
-          style: isTotal
-              ? AppTextStyles.h4
-              : AppTextStyles.labelLarge.copyWith(color: valueColor),
-        ),
+        Text(label, style: labelStyle),
+        Text(value, style: valueStyle),
       ],
     );
   }

@@ -17,6 +17,7 @@ final productsProvider =
         categorySlug: filter.categorySlug,
         searchQuery: filter.searchQuery,
         onlyOnSale: filter.onlyOnSale,
+        onlyInStock: filter.onlyInStock,
         onlyFeatured: filter.onlyFeatured,
         sortBy: filter.sortBy,
         ascending: filter.ascending,
@@ -110,6 +111,7 @@ class ProductsFilter {
   final String? categorySlug;
   final String? searchQuery;
   final bool? onlyOnSale;
+  final bool? onlyInStock;
   final bool? onlyFeatured;
   final String sortBy;
   final bool ascending;
@@ -120,6 +122,7 @@ class ProductsFilter {
     this.categorySlug,
     this.searchQuery,
     this.onlyOnSale,
+    this.onlyInStock,
     this.onlyFeatured,
     this.sortBy = 'created_at',
     this.ascending = false,
@@ -131,6 +134,7 @@ class ProductsFilter {
     String? categorySlug,
     String? searchQuery,
     bool? onlyOnSale,
+    bool? onlyInStock,
     bool? onlyFeatured,
     String? sortBy,
     bool? ascending,
@@ -141,6 +145,7 @@ class ProductsFilter {
       categorySlug: categorySlug ?? this.categorySlug,
       searchQuery: searchQuery ?? this.searchQuery,
       onlyOnSale: onlyOnSale ?? this.onlyOnSale,
+      onlyInStock: onlyInStock ?? this.onlyInStock,
       onlyFeatured: onlyFeatured ?? this.onlyFeatured,
       sortBy: sortBy ?? this.sortBy,
       ascending: ascending ?? this.ascending,
@@ -156,6 +161,7 @@ class ProductsFilter {
         other.categorySlug == categorySlug &&
         other.searchQuery == searchQuery &&
         other.onlyOnSale == onlyOnSale &&
+        other.onlyInStock == onlyInStock &&
         other.onlyFeatured == onlyFeatured &&
         other.sortBy == sortBy &&
         other.ascending == ascending;
@@ -169,6 +175,7 @@ class ProductsFilter {
       categorySlug,
       searchQuery,
       onlyOnSale,
+      onlyInStock,
       onlyFeatured,
       sortBy,
       ascending,
