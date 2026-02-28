@@ -1,4 +1,4 @@
-package com.vantage.fashion_store_app
+package com.vantage.fashion.app
 
 import io.flutter.embedding.android.FlutterActivity
 
