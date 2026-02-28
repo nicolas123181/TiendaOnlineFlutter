@@ -244,8 +244,7 @@ class _CartSummary extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final shippingCost = subtotal >= 10000 ? 0 : 500; // Envío gratis > 100€
-    final total = subtotal + shippingCost;
+    final total = subtotal;
 
     return Container(
       padding: const EdgeInsets.all(24),
@@ -270,44 +269,12 @@ class _CartSummary extends StatelessWidget {
             ),
             const SizedBox(height: 8),
 
-            // Envío
+            // Envío se calcula en checkout
             _SummaryRow(
               label: 'Envío',
-              value: shippingCost == 0
-                  ? 'GRATIS'
-                  : '${(shippingCost / 100).toStringAsFixed(2)} €',
-              valueColor: shippingCost == 0 ? AppColors.success : null,
+              value: 'Se calcula en el checkout',
+              valueColor: Colors.grey,
             ),
-
-            // Mensaje de envío gratis
-            if (subtotal < 10000) ...[
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppColors.info.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.local_shipping_outlined,
-                      size: 16,
-                      color: AppColors.info,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'Añade ${((10000 - subtotal) / 100).toStringAsFixed(2)} € más para envío gratis',
-                        style: AppTextStyles.bodySmall.copyWith(
-                          color: AppColors.info,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
 
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 12),

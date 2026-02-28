@@ -8,6 +8,9 @@ import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 import 'dart:convert';
 
+import 'package:go_router/go_router.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+
 import '../../../../config/theme/app_colors.dart';
 import '../../../../config/theme/app_text_styles.dart';
 import '../../../../config/constants/app_constants.dart';
@@ -23,11 +26,22 @@ import '../providers/sizes_provider.dart';
 // PANTALLA DE FACTURAS MEJORADA
 // ==========================================
 
-class AdminInvoicesScreenComplete extends ConsumerWidget {
+class AdminInvoicesScreenComplete extends ConsumerStatefulWidget {
   const AdminInvoicesScreenComplete({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<AdminInvoicesScreenComplete> createState() =>
+      _AdminInvoicesScreenCompleteState();
+}
+
+class _AdminInvoicesScreenCompleteState
+    extends ConsumerState<AdminInvoicesScreenComplete> {
+  String _searchQuery = '';
+  // 'all' | 'rectificativa' | 'pagada'
+  String _typeFilter = 'all';
+
+  @override
+  Widget build(BuildContext context) {
     final invoicesAsync = ref.watch(invoicesProvider);
 
     return Scaffold(
@@ -41,32 +55,192 @@ class AdminInvoicesScreenComplete extends ConsumerWidget {
         ],
       ),
       body: invoicesAsync.when(
-        data: (invoices) {
-          if (invoices.isEmpty) {
-            return const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.receipt_long, size: 64, color: Colors.grey),
-                  SizedBox(height: 16),
-                  Text('No hay facturas generadas'),
-                  SizedBox(height: 8),
-                  Text(
-                    'Las facturas se generan automáticamente\ncuando se completa un pedido',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.grey),
-                  ),
-                ],
-              ),
-            );
-          }
+        data: (allInvoices) {
+          // Stats
+          final totalBilled = allInvoices.fold<double>(
+            0,
+            (s, inv) => s + inv.total,
+          );
+          final sentCount = allInvoices
+              .where((inv) => inv.status == 'sent')
+              .length;
+          final pendingCount = allInvoices
+              .where((inv) => inv.status == 'pending')
+              .length;
 
-          return ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: invoices.length,
-            itemBuilder: (context, index) {
-              return _InvoiceCardComplete(invoice: invoices[index]);
-            },
+          // Filter
+          final filtered = allInvoices.where((inv) {
+            final q = _searchQuery.toLowerCase();
+            final matchesSearch =
+                q.isEmpty ||
+                inv.invoiceNumber.toLowerCase().contains(q) ||
+                inv.customerName.toLowerCase().contains(q) ||
+                inv.customerEmail.toLowerCase().contains(q) ||
+                inv.orderId.toString().contains(q);
+            final matchesType =
+                _typeFilter == 'all' ||
+                (_typeFilter == 'rectificativa' && inv.total < 0) ||
+                (_typeFilter == 'pagada' && inv.total >= 0);
+            return matchesSearch && matchesType;
+          }).toList();
+
+          return Column(
+            children: [
+              // Stats header
+              Container(
+                color: Colors.grey[50],
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
+                child: Row(
+                  children: [
+                    _StatChip(
+                      label: 'Total',
+                      value: '${allInvoices.length}',
+                      color: Colors.blue,
+                    ),
+                    const SizedBox(width: 8),
+                    _StatChip(
+                      label: 'Facturado',
+                      value: '${totalBilled.toStringAsFixed(0)}€',
+                      color: Colors.green,
+                    ),
+                    const SizedBox(width: 8),
+                    _StatChip(
+                      label: 'Enviadas',
+                      value: '$sentCount',
+                      color: Colors.purple,
+                    ),
+                    const SizedBox(width: 8),
+                    _StatChip(
+                      label: 'Pendientes',
+                      value: '$pendingCount',
+                      color: Colors.orange,
+                    ),
+                  ],
+                ),
+              ),
+              // Search bar
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 10, 12, 6),
+                child: TextField(
+                  onChanged: (v) => setState(() => _searchQuery = v.trim()),
+                  decoration: InputDecoration(
+                    hintText: 'Buscar por nº factura, cliente, email…',
+                    prefixIcon: const Icon(Icons.search, size: 18),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    isDense: true,
+                  ),
+                ),
+              ),
+              // Type filter chips
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 0, 12, 6),
+                child: Row(
+                  children: [
+                    FilterChip(
+                      label: const Text('Rectificativa'),
+                      selected: _typeFilter == 'rectificativa',
+                      showCheckmark: false,
+                      avatar: Icon(
+                        Icons.receipt_long,
+                        size: 16,
+                        color: _typeFilter == 'rectificativa'
+                            ? Colors.red[700]
+                            : Colors.grey[500],
+                      ),
+                      selectedColor: Colors.red.withOpacity(0.15),
+                      labelStyle: TextStyle(
+                        color: _typeFilter == 'rectificativa'
+                            ? Colors.red[700]
+                            : null,
+                        fontWeight: _typeFilter == 'rectificativa'
+                            ? FontWeight.w600
+                            : FontWeight.normal,
+                      ),
+                      onSelected: (on) => setState(
+                        () => _typeFilter = on ? 'rectificativa' : 'all',
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    FilterChip(
+                      label: const Text('Pagada'),
+                      selected: _typeFilter == 'pagada',
+                      showCheckmark: false,
+                      avatar: Icon(
+                        Icons.check_circle_outline,
+                        size: 16,
+                        color: _typeFilter == 'pagada'
+                            ? Colors.green[700]
+                            : Colors.grey[500],
+                      ),
+                      selectedColor: Colors.green.withOpacity(0.15),
+                      labelStyle: TextStyle(
+                        color: _typeFilter == 'pagada'
+                            ? Colors.green[700]
+                            : null,
+                        fontWeight: _typeFilter == 'pagada'
+                            ? FontWeight.w600
+                            : FontWeight.normal,
+                      ),
+                      onSelected: (on) =>
+                          setState(() => _typeFilter = on ? 'pagada' : 'all'),
+                    ),
+                    if (_typeFilter != 'all') ...[
+                      const SizedBox(width: 4),
+                      IconButton(
+                        onPressed: () => setState(() => _typeFilter = 'all'),
+                        icon: const Icon(Icons.close, size: 18),
+                        tooltip: 'Limpiar filtro',
+                        style: IconButton.styleFrom(
+                          foregroundColor: Colors.grey[600],
+                          padding: EdgeInsets.zero,
+                          minimumSize: const Size(32, 32),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const Divider(height: 1),
+              // Invoice list
+              Expanded(
+                child: filtered.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(
+                              Icons.receipt_long,
+                              size: 48,
+                              color: Colors.grey,
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              _searchQuery.isNotEmpty || _typeFilter != 'all'
+                                  ? 'Sin resultados para la búsqueda'
+                                  : 'No hay facturas generadas',
+                              style: const TextStyle(color: Colors.grey),
+                            ),
+                          ],
+                        ),
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: filtered.length,
+                        itemBuilder: (context, index) {
+                          return _InvoiceCardComplete(invoice: filtered[index]);
+                        },
+                      ),
+              ),
+            ],
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -84,6 +258,49 @@ class AdminInvoicesScreenComplete extends ConsumerWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Small stats chip for invoices header
+class _StatChip extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color color;
+
+  const _StatChip({
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Column(
+          children: [
+            Text(
+              value,
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+                color: color,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              style: const TextStyle(fontSize: 10, color: Colors.grey),
+            ),
+          ],
         ),
       ),
     );
@@ -498,19 +715,19 @@ class AdminReturnsScreenComplete extends ConsumerWidget {
               data: (stats) => Row(
                 children: [
                   _StatBox(
-                    label: '📦 Pendientes',
+                    label: 'Pendientes',
                     value: '${stats['pending'] ?? 0}',
                     color: Colors.orange,
                   ),
                   const SizedBox(width: 8),
                   _StatBox(
-                    label: '📬 Recibidos',
+                    label: 'Recibidos',
                     value: '${stats['received'] ?? 0}',
                     color: Colors.purple,
                   ),
                   const SizedBox(width: 8),
                   _StatBox(
-                    label: '✅ Reembolsados',
+                    label: 'Reembolsados',
                     value: '${stats['refunded'] ?? 0}',
                     color: Colors.green,
                   ),
@@ -524,7 +741,7 @@ class AdminReturnsScreenComplete extends ConsumerWidget {
 
             // Pendientes
             _SectionHeader(
-              icon: '📦',
+              icon: Icons.inventory_2,
               title: 'Pendientes de Recibir',
               color: Colors.orange,
             ),
@@ -561,7 +778,7 @@ class AdminReturnsScreenComplete extends ConsumerWidget {
 
             // Recibidos - Pendientes de reembolso
             _SectionHeader(
-              icon: '📬',
+              icon: Icons.markunread_mailbox,
               title: 'Recibidos - Pendientes de Reembolso',
               color: Colors.purple,
             ),
@@ -600,7 +817,7 @@ class AdminReturnsScreenComplete extends ConsumerWidget {
 
             // Completados
             _SectionHeader(
-              icon: '✅',
+              icon: Icons.check_circle,
               title: 'Devoluciones Completadas',
               color: Colors.green,
             ),
@@ -720,7 +937,7 @@ class _StatBox extends StatelessWidget {
 }
 
 class _SectionHeader extends StatelessWidget {
-  final String icon;
+  final IconData icon;
   final String title;
   final Color color;
 
@@ -740,7 +957,7 @@ class _SectionHeader extends StatelessWidget {
             color: color.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Text(icon, style: const TextStyle(fontSize: 20)),
+          child: Icon(icon, color: color, size: 22),
         ),
         const SizedBox(width: 12),
         Text(title, style: AppTextStyles.h4),
@@ -1270,6 +1487,11 @@ class _AdminNewsletterScreenCompleteState
     setState(() => _isSending = true);
 
     try {
+      final subscribers = await ref.read(newsletterProvider.future);
+      final recipients = subscribers
+          .map((s) => {'email': s.email, 'name': null})
+          .toList();
+
       // Llamar al API de la web para enviar el newsletter
       final response = await http.post(
         Uri.parse('${AppConstants.webApiBaseUrl}/api/admin/send-newsletter'),
@@ -1278,6 +1500,7 @@ class _AdminNewsletterScreenCompleteState
           'subject': _subjectController.text,
           'preview': _previewController.text,
           'content': _contentController.text,
+          'recipients': recipients,
         }),
       );
 
@@ -1705,7 +1928,8 @@ class AdminLowStockAlertsScreen extends ConsumerWidget {
                   children: [
                     if (outOfStock.isNotEmpty) ...[
                       _AlertSection(
-                        title: '🚨 SIN STOCK',
+                        icon: Icons.error,
+                        title: 'SIN STOCK',
                         color: Colors.red,
                         items: outOfStock,
                       ),
@@ -1713,7 +1937,8 @@ class AdminLowStockAlertsScreen extends ConsumerWidget {
                     ],
                     if (critical.isNotEmpty) ...[
                       _AlertSection(
-                        title: '⚠️ STOCK CRÍTICO (1-2 uds)',
+                        icon: Icons.warning_amber,
+                        title: 'STOCK CRÍTICO (1-2 uds)',
                         color: Colors.orange,
                         items: critical,
                       ),
@@ -1721,7 +1946,8 @@ class AdminLowStockAlertsScreen extends ConsumerWidget {
                     ],
                     if (warning.isNotEmpty) ...[
                       _AlertSection(
-                        title: '📉 STOCK BAJO',
+                        icon: Icons.trending_down,
+                        title: 'STOCK BAJO',
                         color: Colors.amber,
                         items: warning,
                       ),
@@ -1740,11 +1966,13 @@ class AdminLowStockAlertsScreen extends ConsumerWidget {
 }
 
 class _AlertSection extends StatelessWidget {
+  final IconData icon;
   final String title;
   final Color color;
   final List<dynamic> items;
 
   const _AlertSection({
+    required this.icon,
     required this.title,
     required this.color,
     required this.items,
@@ -1763,6 +1991,8 @@ class _AlertSection extends StatelessWidget {
           ),
           child: Row(
             children: [
+              Icon(icon, color: color, size: 20),
+              const SizedBox(width: 8),
               Text(
                 title,
                 style: TextStyle(fontWeight: FontWeight.bold, color: color),
@@ -1788,43 +2018,132 @@ class _AlertSection extends StatelessWidget {
         const SizedBox(height: 8),
         ...items.map((item) {
           final productSize = item;
+          final hasImage =
+              productSize.productImage != null &&
+              productSize.productImage!.isNotEmpty;
           return Card(
             margin: const EdgeInsets.only(bottom: 8),
-            child: ListTile(
-              leading: Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Center(
-                  child: Text(
-                    productSize.size,
-                    style: TextStyle(fontWeight: FontWeight.bold, color: color),
-                  ),
-                ),
-              ),
-              title: Text('Producto #${productSize.productId}'),
-              subtitle: Text('Talla: ${productSize.size}'),
-              trailing: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: productSize.stock == 0 ? Colors.red : color,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  productSize.stock == 0
-                      ? 'AGOTADO'
-                      : '${productSize.stock} uds',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                  ),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: () {
+                context.push('/admin/products/${productSize.productId}/edit');
+              },
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  children: [
+                    // Product image
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: hasImage
+                          ? CachedNetworkImage(
+                              imageUrl: productSize.productImage!,
+                              width: 56,
+                              height: 56,
+                              fit: BoxFit.cover,
+                              placeholder: (_, __) => Container(
+                                width: 56,
+                                height: 56,
+                                color: Colors.grey[200],
+                                child: const Icon(
+                                  Icons.image,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                              errorWidget: (_, __, ___) => Container(
+                                width: 56,
+                                height: 56,
+                                color: Colors.grey[200],
+                                child: const Icon(
+                                  Icons.broken_image,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            )
+                          : Container(
+                              width: 56,
+                              height: 56,
+                              decoration: BoxDecoration(
+                                color: Colors.grey[200],
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Icon(
+                                Icons.inventory_2,
+                                color: Colors.grey,
+                              ),
+                            ),
+                    ),
+                    const SizedBox(width: 12),
+                    // Product info
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            productSize.productName ??
+                                'Producto #${productSize.productId}',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: color.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  'Talla ${productSize.size}',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                    color: color,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    // Stock badge
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: productSize.stock == 0 ? Colors.red : color,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        productSize.stock == 0
+                            ? 'AGOTADO'
+                            : '${productSize.stock} uds',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Icon(
+                      Icons.chevron_right,
+                      color: Colors.grey[400],
+                      size: 20,
+                    ),
+                  ],
                 ),
               ),
             ),

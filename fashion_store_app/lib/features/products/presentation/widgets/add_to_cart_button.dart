@@ -121,16 +121,20 @@ class _AddToCartButtonState extends ConsumerState<AddToCartButton>
 
     _animationController.forward().then((_) => _animationController.reverse());
 
+    final sizeStock = _getMaxQuantityForSize(sizesStock);
+
     ref
         .read(cartProvider.notifier)
         .addItem(
           product: widget.product,
           size: _selectedSize ?? 'Única',
           quantity: _quantity,
+          sizeStock: sizeStock > 0 ? sizeStock : null,
         );
 
-    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-    ScaffoldMessenger.of(context).showSnackBar(
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.hideCurrentSnackBar();
+    messenger.showSnackBar(
       SnackBar(
         content: Row(
           children: [
@@ -142,6 +146,13 @@ class _AddToCartButtonState extends ConsumerState<AddToCartButton>
                 style: AppTextStyles.bodyMedium.copyWith(color: Colors.white),
               ),
             ),
+            IconButton(
+              icon: const Icon(Icons.close, color: Colors.white, size: 18),
+              onPressed: () => messenger.hideCurrentSnackBar(),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+              tooltip: 'Cerrar',
+            ),
           ],
         ),
         backgroundColor: AppColors.primary,
@@ -151,7 +162,7 @@ class _AddToCartButtonState extends ConsumerState<AddToCartButton>
           textColor: AppColors.accent,
           onPressed: () => context.push('/cart'),
         ),
-        duration: const Duration(seconds: 3),
+        duration: const Duration(seconds: 5),
       ),
     );
 
@@ -822,7 +833,6 @@ class SizeGuideSheet extends StatefulWidget {
 class _SizeGuideSheetState extends State<SizeGuideSheet>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  String _selectedCategory = 'tops';
 
   // Datos de tallas
   static const Map<String, List<Map<String, dynamic>>> _sizeData = {
@@ -903,11 +913,7 @@ class _SizeGuideSheetState extends State<SizeGuideSheet>
               Tab(text: 'Parte superior'),
               Tab(text: 'Parte inferior'),
             ],
-            onTap: (index) {
-              setState(() {
-                _selectedCategory = index == 0 ? 'tops' : 'bottoms';
-              });
-            },
+            onTap: (index) {},
           ),
 
           // Contenido

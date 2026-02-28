@@ -143,7 +143,7 @@ class ProductRepositoryImpl implements ProductRepository {
 
   @override
   FutureEither<List<ProductModel>> getProductsOnSale({int limit = 4}) async {
-    return getProducts(limit: limit, onlyOnSale: true);
+    return getProducts(limit: limit, onlyOnSale: true, onlyInStock: true);
   }
 
   @override

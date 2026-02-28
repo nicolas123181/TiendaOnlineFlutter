@@ -234,7 +234,7 @@ class ProductDetailScreen extends ConsumerWidget {
                       _InfoSection(
                         title: 'Envío',
                         icon: Icons.local_shipping_outlined,
-                        content: 'Envío gratuito en pedidos superiores a 100€',
+                        content: 'Envío a domicilio o recogida en tienda',
                       ),
                       const SizedBox(height: 16),
                       _InfoSection(

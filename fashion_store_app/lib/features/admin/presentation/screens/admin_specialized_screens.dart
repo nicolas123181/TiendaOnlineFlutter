@@ -28,7 +28,13 @@ class AdminSizesScreen extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('📐 Sistemas de Tallas', style: AppTextStyles.h3),
+            Row(
+              children: [
+                const Icon(Icons.straighten, size: 20),
+                const SizedBox(width: 8),
+                Text('Sistemas de Tallas', style: AppTextStyles.h3),
+              ],
+            ),
             const SizedBox(height: 8),
             Text(
               'Cada categoría tiene un sistema de tallas predefinido',
@@ -86,7 +92,13 @@ class AdminSizesScreen extends ConsumerWidget {
             const SizedBox(height: 32),
 
             // Stock bajo
-            Text('⚠️ Stock Bajo por Talla', style: AppTextStyles.h3),
+            Row(
+              children: [
+                const Icon(Icons.warning_amber, size: 20, color: Colors.orange),
+                const SizedBox(width: 8),
+                Text('Stock Bajo por Talla', style: AppTextStyles.h3),
+              ],
+            ),
             const SizedBox(height: 8),
             Text(
               'Tallas con menos de 5 unidades disponibles',
@@ -109,7 +121,20 @@ class AdminSizesScreen extends ConsumerWidget {
                               color: Colors.green,
                             ),
                             SizedBox(height: 16),
-                            Text('✅ Todas las tallas tienen stock suficiente'),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.check_circle,
+                                  size: 18,
+                                  color: Colors.green,
+                                ),
+                                const SizedBox(width: 8),
+                                const Text(
+                                  'Todas las tallas tienen stock suficiente',
+                                ),
+                              ],
+                            ),
                           ],
                         ),
                       ),
@@ -248,20 +273,14 @@ class AdminReturnsScreen extends ConsumerWidget {
                           _ReturnActionButton(
                             label: 'Reembolsada',
                             color: AppColors.success,
-                            onPressed: () => _showRefundDialog(
-                              context,
-                              ref,
-                              item,
-                            ),
+                            onPressed: () =>
+                                _showRefundDialog(context, ref, item),
                           ),
                           _ReturnActionButton(
                             label: 'Rechazada',
                             color: AppColors.error,
-                            onPressed: () => _showRejectDialog(
-                              context,
-                              ref,
-                              item,
-                            ),
+                            onPressed: () =>
+                                _showRejectDialog(context, ref, item),
                           ),
                         ],
                       ),
@@ -287,12 +306,14 @@ class AdminReturnsScreen extends ConsumerWidget {
     int? refundAmount,
   }) async {
     try {
-      await ref.read(returnAdminActionsProvider).updateReturnStatus(
-        returnId: item.id,
-        status: status,
-        adminNotes: adminNotes,
-        refundAmount: refundAmount,
-      );
+      await ref
+          .read(returnAdminActionsProvider)
+          .updateReturnStatus(
+            returnId: item.id,
+            status: status,
+            adminNotes: adminNotes,
+            refundAmount: refundAmount,
+          );
 
       ref.invalidate(returnsAdminProvider);
 
@@ -392,9 +413,7 @@ class AdminReturnsScreen extends ConsumerWidget {
         content: TextField(
           controller: notesController,
           maxLines: 3,
-          decoration: const InputDecoration(
-            labelText: 'Motivo del rechazo',
-          ),
+          decoration: const InputDecoration(labelText: 'Motivo del rechazo'),
         ),
         actions: [
           TextButton(

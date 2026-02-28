@@ -1,0 +1,81 @@
+﻿Analyzing lib...
+
+warning - features\orders\presentation\screens\order_detail_screen.dart:446:11 - The value of the local variable 'colorScheme' isn't used. Try removing the variable or using it. - unused_local_variable
+warning - features\orders\presentation\screens\orders_screen.dart:18:11 - The value of the local variable 'colorScheme' isn't used. Try removing the variable or using it. - unused_local_variable
+warning - features\products\presentation\widgets\add_to_cart_button.dart:825:10 - The value of the field '_selectedCategory' isn't used. Try removing the field, or using it. - unused_field
+warning - features\profile\presentation\screens\profile_screen.dart:15:11 - The value of the local variable 'colorScheme' isn't used. Try removing the variable or using it. - unused_local_variable
+warning - features\profile\presentation\screens\profile_screen.dart:16:11 - The value of the local variable 'textTheme' isn't used. Try removing the variable or using it. - unused_local_variable
+warning - shared\utils\app_reload.dart:1:8 - Unused import: 'app_reload_stub.dart'. Try removing the import directive. - unused_import
+   info - features\admin\presentation\providers\products_provider.dart:211:9 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - features\admin\presentation\screens\admin_complete_screens.dart:544:54 - Don't use 'BuildContext's across async gaps. Try rewriting the code to not use the 'BuildContext', or guard the use with a 'mounted' check. - use_build_context_synchronously
+   info - features\admin\presentation\screens\admin_complete_screens.dart:1418:50 - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check. Guard a 'State.context' use with a 'mounted' check on the State, and other BuildContext use with a 'mounted' check on the BuildContext. - use_build_context_synchronously
+   info - features\admin\presentation\screens\admin_complete_screens.dart:1531:43 - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check. Guard a 'State.context' use with a 'mounted' check on the State, and other BuildContext use with a 'mounted' check on the BuildContext. - use_build_context_synchronously
+   info - features\admin\presentation\screens\admin_improved_screens.dart:677:22 - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement. - deprecated_member_use
+   info - features\admin\presentation\screens\admin_product_form_screen.dart:121:28 - Don't use 'BuildContext's across async gaps. Try rewriting the code to not use the 'BuildContext', or guard the use with a 'mounted' check. - use_build_context_synchronously
+   info - features\admin\presentation\screens\admin_screens.dart:781:68 - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement. - deprecated_member_use
+   info - features\admin\presentation\screens\admin_screens.dart:784:66 - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement. - deprecated_member_use
+   info - features\admin\presentation\screens\admin_screens.dart:811:56 - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement. - deprecated_member_use
+   info - features\admin\presentation\screens\admin_screens.dart:1026:61 - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement. - deprecated_member_use
+   info - features\admin\presentation\screens\admin_screens.dart:1131:32 - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check. Guard a 'State.context' use with a 'mounted' check on the State, and other BuildContext use with a 'mounted' check on the BuildContext. - use_build_context_synchronously
+   info - features\admin\presentation\screens\admin_screens.dart:1137:32 - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check. Guard a 'State.context' use with a 'mounted' check on the State, and other BuildContext use with a 'mounted' check on the BuildContext. - use_build_context_synchronously
+   info - features\admin\presentation\screens\admin_specialized_screens.dart:369:9 - Don't use 'BuildContext's across async gaps. Try rewriting the code to not use the 'BuildContext', or guard the use with a 'mounted' check. - use_build_context_synchronously
+   info - features\admin\presentation\screens\admin_specialized_screens.dart:414:9 - Don't use 'BuildContext's across async gaps. Try rewriting the code to not use the 'BuildContext', or guard the use with a 'mounted' check. - use_build_context_synchronously
+   info - features\auth\data\repositories\auth_repository_impl.dart:34:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - features\auth\data\repositories\auth_repository_impl.dart:41:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - features\auth\data\repositories\auth_repository_impl.dart:42:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - features\auth\data\repositories\auth_repository_impl.dart:43:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - features\auth\data\repositories\auth_repository_impl.dart:46:9 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - features\auth\data\repositories\auth_repository_impl.dart:52:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - features\auth\data\repositories\auth_repository_impl.dart:66:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - features\auth\data\repositories\auth_repository_impl.dart:69:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - features\auth\data\repositories\auth_repository_impl.dart:70:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - features\auth\data\repositories\auth_repository_impl.dart:86:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - features\auth\data\repositories\auth_repository_impl.dart:117:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - features\auth\data\repositories\auth_repository_impl.dart:241:9 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - features\auth\data\repositories\auth_repository_impl.dart:246:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - features\checkout\presentation\screens\complete_checkout_screen.dart:421:21 - 'groupValue' is deprecated and shouldn't be used. Use a RadioGroup ancestor to manage group value instead. This feature was deprecated after v3.32.0-0.0.pre. Try replacing the use of the deprecated member with the replacement. - deprecated_member_use
+   info - features\checkout\presentation\screens\complete_checkout_screen.dart:422:21 - 'onChanged' is deprecated and shouldn't be used. Use RadioGroup to handle value change instead. This feature was deprecated after v3.32.0-0.0.pre. Try replacing the use of the deprecated member with the replacement. - deprecated_member_use
+   info - features\favorites\data\repositories\wishlist_service.dart:27:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - features\favorites\data\repositories\wishlist_service.dart:36:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - features\favorites\data\repositories\wishlist_service.dart:42:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - features\favorites\data\repositories\wishlist_service.dart:58:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - features\favorites\data\repositories\wishlist_service.dart:66:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - features\favorites\data\repositories\wishlist_service.dart:68:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - features\favorites\data\repositories\wishlist_service.dart:76:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - features\favorites\data\repositories\wishlist_service.dart:80:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - features\favorites\data\repositories\wishlist_service.dart:82:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - features\favorites\data\repositories\wishlist_service.dart:106:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - features\favorites\data\repositories\wishlist_service.dart:130:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - features\products\presentation\screens\size_recommender_screen.dart:85:11 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - features\products\presentation\screens\size_recommender_screen.dart:87:11 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - features\products\presentation\screens\size_recommender_screen.dart:89:11 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - features\products\presentation\screens\size_recommender_screen.dart:91:11 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - features\products\presentation\screens\size_recommender_screen.dart:93:11 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - features\products\presentation\screens\size_recommender_screen.dart:96:11 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - features\products\presentation\screens\size_recommender_screen.dart:98:11 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - features\products\presentation\screens\size_recommender_screen.dart:100:11 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - features\products\presentation\screens\size_recommender_screen.dart:102:11 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - features\products\presentation\screens\size_recommender_screen.dart:104:11 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - features\products\presentation\screens\size_recommender_screen.dart:106:11 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - features\products\presentation\screens\size_recommender_screen.dart:115:11 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - features\products\presentation\screens\size_recommender_screen.dart:117:11 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - features\products\presentation\screens\size_recommender_screen.dart:119:11 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - features\products\presentation\screens\size_recommender_screen.dart:121:11 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - features\products\presentation\screens\size_recommender_screen.dart:123:11 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - features\products\presentation\screens\size_recommender_screen.dart:128:11 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - features\products\presentation\screens\size_recommender_screen.dart:130:11 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - features\products\presentation\screens\size_recommender_screen.dart:132:11 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - features\products\presentation\screens\size_recommender_screen.dart:134:11 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - features\products\presentation\screens\size_recommender_screen.dart:136:11 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - features\products\presentation\screens\size_recommender_screen.dart:138:11 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - features\products\presentation\widgets\add_to_cart_button.dart:107:7 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - features\returns\presentation\screens\return_screens.dart:98:17 - 'groupValue' is deprecated and shouldn't be used. Use a RadioGroup ancestor to manage group value instead. This feature was deprecated after v3.32.0-0.0.pre. Try replacing the use of the deprecated member with the replacement. - deprecated_member_use
+   info - features\returns\presentation\screens\return_screens.dart:99:17 - 'onChanged' is deprecated and shouldn't be used. Use RadioGroup to handle value change instead. This feature was deprecated after v3.32.0-0.0.pre. Try replacing the use of the deprecated member with the replacement. - deprecated_member_use
+   info - main.dart:26:5 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - main.dart:27:5 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - main.dart:36:5 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - main.dart:53:5 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - main.dart:55:5 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - shared\utils\app_reload_web.dart:2:1 - 'dart:html' is deprecated and shouldn't be used. Use package:web and dart:js_interop instead. Try replacing the use of the deprecated member with the replacement. - deprecated_member_use
+
+77 issues found.

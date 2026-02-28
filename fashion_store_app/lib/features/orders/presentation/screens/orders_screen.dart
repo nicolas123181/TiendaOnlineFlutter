@@ -15,7 +15,6 @@ class OrdersScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final ordersAsync = ref.watch(userOrdersProvider);
 
@@ -110,7 +109,7 @@ class _OrderCard extends StatelessWidget {
         side: BorderSide(color: Theme.of(context).dividerColor),
       ),
       child: InkWell(
-        onTap: () => context.push('/order/${order.id}'),
+        onTap: () => context.push('/orders/${order.id}'),
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(16),

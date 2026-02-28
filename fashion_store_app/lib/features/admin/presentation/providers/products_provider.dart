@@ -113,6 +113,7 @@ class ProductActions {
     int? categoryId,
     int? stock,
     bool? featured,
+    bool? isActive,
     int? salePrice,
     DateTime? saleEndsAt,
     List<String>? images,
@@ -131,6 +132,7 @@ class ProductActions {
     if (categoryId != null) updates['category_id'] = categoryId;
     if (stock != null) updates['stock'] = stock;
     if (featured != null) updates['featured'] = featured;
+    if (isActive != null) updates['is_active'] = isActive;
     if (salePrice != null) {
       updates['sale_price'] = salePrice;
       updates['is_on_sale'] = true;
@@ -171,9 +173,35 @@ class ProductActions {
     ref.invalidate(productByIdProvider(id));
   }
 
-  /// Eliminar producto
+  /// Activar / desactivar producto
+  Future<void> toggleProductActive(int id, bool isActive) async {
+    final supabase = ref.read(supabaseClientProvider);
+    await supabase
+        .from('products')
+        .update({'is_active': isActive})
+        .eq('id', id);
+    ref.invalidate(productsListProvider);
+    ref.invalidate(productByIdProvider(id));
+  }
+
+  /// Eliminar producto (bloqueado si tiene pedidos)
   Future<void> deleteProduct(int id) async {
     final supabase = ref.read(supabaseClientProvider);
+
+    // Verificar si el producto tiene pedidos
+    final existing = await supabase
+        .from('order_items')
+        .select('id')
+        .eq('product_id', id)
+        .limit(1);
+
+    final count = (existing as List).length;
+    if (count > 0) {
+      throw Exception(
+        'No se puede eliminar: este producto tiene pedidos asociados. '
+        'Desactívalo en su lugar.',
+      );
+    }
 
     // Eliminar tallas primero
     await supabase.from('product_sizes').delete().eq('product_id', id);

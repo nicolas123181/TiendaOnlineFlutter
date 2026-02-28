@@ -173,6 +173,55 @@ class AuthActionsNotifier extends Notifier<AuthActionState> {
     );
   }
 
+  /// Cambiar contraseña (usuario autenticado)
+  Future<bool> changePassword({
+    required String newPassword,
+    required String confirmPassword,
+  }) async {
+    state = state.copyWith(isLoading: true, error: null);
+
+    // Validaciones del lado del cliente (mismas que la web)
+    if (newPassword.isEmpty || confirmPassword.isEmpty) {
+      state = state.copyWith(
+        isLoading: false,
+        error: 'Todos los campos son requeridos',
+      );
+      return false;
+    }
+
+    if (newPassword != confirmPassword) {
+      state = state.copyWith(
+        isLoading: false,
+        error: 'Las contraseñas no coinciden',
+      );
+      return false;
+    }
+
+    if (newPassword.length < 6) {
+      state = state.copyWith(
+        isLoading: false,
+        error: 'La contraseña debe tener al menos 6 caracteres',
+      );
+      return false;
+    }
+
+    final result = await _repository.updatePassword(newPassword);
+
+    return result.fold(
+      (failure) {
+        state = state.copyWith(isLoading: false, error: failure.message);
+        return false;
+      },
+      (_) {
+        state = state.copyWith(
+          isLoading: false,
+          successMessage: 'Contraseña actualizada correctamente',
+        );
+        return true;
+      },
+    );
+  }
+
   /// Limpiar errores
   void clearError() {
     state = state.copyWith(error: null);

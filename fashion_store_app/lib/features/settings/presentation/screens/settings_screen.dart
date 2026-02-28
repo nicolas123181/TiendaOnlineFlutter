@@ -156,27 +156,13 @@ class SettingsScreen extends ConsumerWidget {
                       icon: Icons.lock_outline,
                       title: 'Cambiar Contraseña',
                       subtitle: 'Actualizar tu contraseña',
-                      onTap: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Cambio de contraseña próximamente'),
-                          ),
-                        );
-                      },
+                      onTap: () => context.push('/change-password'),
                     ),
                     _SettingsTile(
                       icon: Icons.location_on_outlined,
                       title: 'Direcciones de Envío',
                       subtitle: 'Gestionar tus direcciones guardadas',
-                      onTap: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                              'Gestión de direcciones próximamente',
-                            ),
-                          ),
-                        );
-                      },
+                      onTap: () => context.push('/addresses'),
                     ),
                   ],
                 ),
@@ -258,30 +244,34 @@ class SettingsScreen extends ConsumerWidget {
                   icon: Icons.info_outline,
                   children: [
                     _SettingsTile(
-                      icon: Icons.help_outline,
-                      title: 'Centro de Ayuda',
-                      subtitle: 'Preguntas frecuentes y soporte',
-                      onTap: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Centro de ayuda próximamente'),
-                          ),
-                        );
-                      },
+                      icon: Icons.straighten,
+                      title: 'Recomendador de Tallas',
+                      subtitle: 'Encuentra tu talla perfecta',
+                      onTap: () => context.push('/size-recommender'),
+                    ),
+                    _SettingsTile(
+                      icon: Icons.store_outlined,
+                      title: 'Sobre Nosotros',
+                      subtitle: 'Conoce nuestra historia y valores',
+                      onTap: () => context.push('/about'),
+                    ),
+                    _SettingsTile(
+                      icon: Icons.local_shipping_outlined,
+                      title: 'Envíos y Devoluciones',
+                      subtitle: 'Políticas de envío y devoluciones',
+                      onTap: () => context.push('/shipping-returns'),
+                    ),
+                    _SettingsTile(
+                      icon: Icons.privacy_tip_outlined,
+                      title: 'Política de Privacidad',
+                      subtitle: 'Cómo tratamos tus datos',
+                      onTap: () => context.push('/privacy'),
                     ),
                     _SettingsTile(
                       icon: Icons.description_outlined,
                       title: 'Términos y Condiciones',
-                      subtitle: 'Políticas de uso y privacidad',
-                      onTap: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                              'Términos y condiciones próximamente',
-                            ),
-                          ),
-                        );
-                      },
+                      subtitle: 'Condiciones de uso del servicio',
+                      onTap: () => context.push('/terms'),
                     ),
                     _SettingsTile(
                       icon: Icons.info,

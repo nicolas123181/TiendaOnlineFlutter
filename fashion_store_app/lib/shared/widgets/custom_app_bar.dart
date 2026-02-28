@@ -98,7 +98,6 @@ class _SearchBottomSheetState extends State<_SearchBottomSheet> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: Theme.of(context).scaffoldBackgroundColor,
       height: MediaQuery.of(context).size.height * 0.85,
       decoration: BoxDecoration(
         color: Theme.of(context).scaffoldBackgroundColor,

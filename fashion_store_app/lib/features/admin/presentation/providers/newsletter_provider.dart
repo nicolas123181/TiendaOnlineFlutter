@@ -1,24 +1,42 @@
 // Provider simplificado para gestión de newsletter
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../shared/services/supabase_service.dart';
 import '../../data/models/newsletter_subscriber.dart';
 
-/// Provider para listar suscriptores
+/// Provider para listar suscriptores (usando Supabase directamente)
 final newsletterProvider = FutureProvider<List<NewsletterSubscriber>>((
   ref,
 ) async {
-  final supabase = ref.read(supabaseClientProvider);
+  try {
+    final supabase = ref.read(supabaseClientProvider);
 
-  final response = await supabase
-      .from('newsletter_subscribers')
-      .select('*')
-      .order('subscribed_at', ascending: false);
+    // Verificar si hay sesión activa
+    final session = supabase.auth.currentSession;
+    debugPrint('📧 Newsletter: sesión activa = ${session != null}');
+    if (session != null) {
+      debugPrint('📧 Newsletter: usuario = ${session.user.email}');
+    }
 
-  return (response as List)
-      .map((json) => NewsletterSubscriber.fromJson(json))
-      .toList();
+    final response = await supabase
+        .from('newsletter_subscribers')
+        .select('*')
+        .order('subscribed_at', ascending: false);
+
+    debugPrint(
+      '📧 Newsletter: ${(response as List).length} suscriptores encontrados',
+    );
+
+    return (response)
+        .map((json) => NewsletterSubscriber.fromJson(json))
+        .toList();
+  } catch (e, stack) {
+    debugPrint('📧 Newsletter ERROR: $e');
+    debugPrint('📧 Stack: $stack');
+    rethrow;
+  }
 });
 
 /// Provider para estadísticas de newsletter

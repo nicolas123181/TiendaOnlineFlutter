@@ -177,7 +177,7 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
                           if (item.productIsOnSale &&
                               item.productSalePrice != null) ...[
                             Text(
-                              '€${item.productPrice}',
+                              '€${(item.productPrice! / 100).toStringAsFixed(2)}',
                               style: AppTextStyles.bodySmall.copyWith(
                                 decoration: TextDecoration.lineThrough,
                                 color: colorScheme.onSurface.withValues(
@@ -187,7 +187,7 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
                             ),
                             const SizedBox(width: 8),
                             Text(
-                              '€${item.productSalePrice}',
+                              '€${(item.productSalePrice! / 100).toStringAsFixed(2)}',
                               style: AppTextStyles.labelMedium.copyWith(
                                 color: AppColors.error,
                               ),
@@ -213,7 +213,7 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
                           if (!item.productIsOnSale ||
                               item.productSalePrice == null)
                             Text(
-                              '€${item.productPrice}',
+                              '€${(item.productPrice! / 100).toStringAsFixed(2)}',
                               style: AppTextStyles.labelMedium.copyWith(
                                 color: colorScheme.onSurface,
                               ),

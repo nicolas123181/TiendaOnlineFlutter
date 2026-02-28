@@ -58,8 +58,7 @@ class AppConstants {
   // ============================================
   // ENVÍO
   // ============================================
-  static const int freeShippingThreshold = 10000; // 100€ en céntimos
-  static const int standardShippingCost = 500; // 5€ en céntimos
+  // El coste de envío se calcula en el checkout según el método elegido
 
   // ============================================
   // CLOUDINARY - CONFIGURACIÓN PARA UPLOAD DE IMÁGENES
@@ -81,6 +80,8 @@ class AppConstants {
       dotenv.env['WEB_API_BASE_URL'] ??
       dotenv.env['PUBLIC_SITE_URL'] ??
       'https://nicovantage.victoriafp.online';
+
+  static String get adminApiKey => dotenv.env['ADMIN_API_KEY'] ?? '';
 
   // ============================================
   // TALLAS DISPONIBLES

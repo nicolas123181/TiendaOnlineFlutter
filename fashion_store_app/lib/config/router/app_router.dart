@@ -31,6 +31,9 @@ import '../../features/admin/presentation/screens/admin_product_form_screen.dart
 import '../../features/admin/presentation/screens/admin_improved_screens.dart';
 import '../../features/admin/presentation/screens/admin_complete_screens.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
+import '../../features/settings/presentation/screens/legal_screens.dart';
+import '../../features/settings/presentation/screens/change_password_screen.dart';
+import '../../features/products/presentation/screens/size_recommender_screen.dart';
 
 /// Provider del router
 final routerProvider = Provider<GoRouter>((ref) {
@@ -145,6 +148,17 @@ final routerProvider = Provider<GoRouter>((ref) {
         pageBuilder: (context, state) => CustomTransitionPage(
           key: state.pageKey,
           child: const SettingsScreen(),
+          transitionsBuilder: _slideTransition,
+        ),
+      ),
+
+      // Cambiar contraseña
+      GoRoute(
+        path: '/change-password',
+        name: 'changePassword',
+        pageBuilder: (context, state) => CustomTransitionPage(
+          key: state.pageKey,
+          child: const ChangePasswordScreen(),
           transitionsBuilder: _slideTransition,
         ),
       ),
@@ -365,6 +379,57 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/addresses',
         name: 'addresses',
         builder: (context, state) => const AddressesScreen(),
+      ),
+
+      // ============================================
+      // PÁGINAS LEGALES E INFORMATIVAS
+      // ============================================
+      GoRoute(
+        path: '/about',
+        name: 'aboutUs',
+        pageBuilder: (context, state) => CustomTransitionPage(
+          key: state.pageKey,
+          child: const AboutUsScreen(),
+          transitionsBuilder: _slideTransition,
+        ),
+      ),
+      GoRoute(
+        path: '/shipping-returns',
+        name: 'shippingReturns',
+        pageBuilder: (context, state) => CustomTransitionPage(
+          key: state.pageKey,
+          child: const ShippingReturnsScreen(),
+          transitionsBuilder: _slideTransition,
+        ),
+      ),
+      GoRoute(
+        path: '/privacy',
+        name: 'privacyPolicy',
+        pageBuilder: (context, state) => CustomTransitionPage(
+          key: state.pageKey,
+          child: const PrivacyPolicyScreen(),
+          transitionsBuilder: _slideTransition,
+        ),
+      ),
+      GoRoute(
+        path: '/terms',
+        name: 'termsConditions',
+        pageBuilder: (context, state) => CustomTransitionPage(
+          key: state.pageKey,
+          child: const TermsConditionsScreen(),
+          transitionsBuilder: _slideTransition,
+        ),
+      ),
+
+      // Recomendador de tallas interactivo
+      GoRoute(
+        path: '/size-recommender',
+        name: 'sizeRecommender',
+        pageBuilder: (context, state) => CustomTransitionPage(
+          key: state.pageKey,
+          child: const SizeRecommenderScreen(),
+          transitionsBuilder: _slideTransition,
+        ),
       ),
     ],
   );

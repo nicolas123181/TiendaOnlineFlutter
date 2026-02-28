@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../shared/services/supabase_service.dart';
 import '../../data/models/product_model.dart';
 import '../../data/repositories/product_repository_impl.dart';
 
@@ -43,16 +44,56 @@ final featuredProductsProvider = FutureProvider<List<ProductModel>>((
   );
 });
 
-/// Provider para productos en oferta
+/// Provider para productos en oferta (solo con stock disponible)
 final saleProductsProvider = FutureProvider<List<ProductModel>>((ref) async {
   final repository = ref.watch(productRepositoryProvider);
 
-  final result = await repository.getProductsOnSale(limit: 6);
+  // Pedimos más productos para filtrar luego por stock de tallas
+  final result = await repository.getProductsOnSale(limit: 12);
 
-  return result.fold(
+  final products = result.fold(
     (failure) => throw Exception(failure.message),
     (products) => products,
   );
+
+  if (products.isEmpty) return [];
+
+  // Verificar stock por tallas para cada producto
+  final supabase = ref.read(supabaseClientProvider);
+  final productIds = products.map((p) => p.id).toList();
+
+  try {
+    final sizesResponse = await supabase
+        .from('product_sizes')
+        .select('product_id, stock')
+        .inFilter('product_id', productIds);
+
+    // Productos que tienen registros en product_sizes
+    final productsWithSizes = <int>{};
+    final productsWithStock = <int>{};
+
+    for (final row in sizesResponse) {
+      final pid = row['product_id'] as int;
+      final stock = row['stock'] as int? ?? 0;
+      productsWithSizes.add(pid);
+      if (stock > 0) productsWithStock.add(pid);
+    }
+
+    // Filtrar: si tiene tallas, al menos una debe tener stock > 0
+    // Si no tiene tallas, confiar en products.stock > 0 (ya filtrado por query)
+    return products
+        .where((p) {
+          if (productsWithSizes.contains(p.id)) {
+            return productsWithStock.contains(p.id);
+          }
+          return p.stock > 0;
+        })
+        .take(6)
+        .toList();
+  } catch (_) {
+    // Si falla la consulta de tallas, devolver solo los que tengan stock > 0
+    return products.where((p) => p.stock > 0).take(6).toList();
+  }
 });
 
 /// Provider para detalle de producto por slug

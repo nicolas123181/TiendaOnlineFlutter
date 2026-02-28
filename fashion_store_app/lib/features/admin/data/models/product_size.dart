@@ -6,6 +6,8 @@ class ProductSize {
   final String size;
   final int stock;
   final DateTime createdAt;
+  final String? productName;
+  final String? productImage;
 
   ProductSize({
     required this.id,
@@ -13,15 +15,31 @@ class ProductSize {
     required this.size,
     required this.stock,
     required this.createdAt,
+    this.productName,
+    this.productImage,
   });
 
   factory ProductSize.fromJson(Map<String, dynamic> json) {
+    // Extraer datos del producto si vienen del join con products
+    String? name;
+    String? image;
+    if (json['products'] is Map<String, dynamic>) {
+      final product = json['products'] as Map<String, dynamic>;
+      name = product['name'] as String?;
+      final images = product['images'];
+      if (images is List && images.isNotEmpty) {
+        image = images.first as String?;
+      }
+    }
+
     return ProductSize(
       id: json['id'],
       productId: json['product_id'],
       size: json['size'],
       stock: json['stock'] ?? 0,
       createdAt: DateTime.parse(json['created_at']),
+      productName: name,
+      productImage: image,
     );
   }
 

@@ -12,6 +12,12 @@ class AdminStats {
   final double inventoryValue;
   final List<DailySale> last7DaysSales;
 
+  // Returns / Refunds
+  final int pendingReturns;
+  final double monthlyRefunds;
+  final Map<String, int> returnsByStatus;
+  final List<DailySale> last7DaysReturns;
+
   AdminStats({
     required this.monthlySales,
     required this.pendingOrders,
@@ -23,6 +29,10 @@ class AdminStats {
     required this.outOfStockCount,
     required this.inventoryValue,
     required this.last7DaysSales,
+    this.pendingReturns = 0,
+    this.monthlyRefunds = 0.0,
+    this.returnsByStatus = const {},
+    this.last7DaysReturns = const [],
   });
 
   factory AdminStats.fromJson(Map<String, dynamic> json) {
@@ -59,6 +69,14 @@ class DailySale {
       orders: json['orders'] ?? 0,
     );
   }
+}
+
+/// Chart data for a selected period (7d / 30d / 1y / all)
+class ChartPeriodData {
+  final List<DailySale> sales;
+  final List<DailySale> returns;
+
+  const ChartPeriodData({required this.sales, required this.returns});
 }
 
 class UserStats {

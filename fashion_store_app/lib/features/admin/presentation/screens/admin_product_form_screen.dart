@@ -29,6 +29,7 @@ class _AdminProductFormScreenState
 
   int? _selectedCategoryId;
   bool _featured = false;
+  bool _isActive = true;
   DateTime? _saleEndsAt;
   List<String> _imageUrls = [];
   final List<XFile> _pendingImages = [];
@@ -65,6 +66,7 @@ class _AdminProductFormScreenState
           _primaryImageUrl = _imageUrls.first;
           _primaryPendingPath = null;
         }
+        _isActive = product['is_active'] ?? true;
 
         if (product['sale_price'] != null) {
           _salePriceController.text = ((product['sale_price'] as int) / 100.0)
@@ -262,6 +264,7 @@ class _AdminProductFormScreenState
           categoryId: _selectedCategoryId,
           stock: stock,
           featured: _featured,
+          isActive: _isActive,
           salePrice: salePrice,
           saleEndsAt: _saleEndsAt,
           images: _imageUrls,
@@ -729,13 +732,34 @@ class _AdminProductFormScreenState
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(16),
-                child: CheckboxListTile(
-                  title: const Text('Producto destacado'),
-                  subtitle: const Text('Aparecerá en "Ofertas Flash"'),
-                  value: _featured,
-                  onChanged: (value) {
-                    setState(() => _featured = value ?? false);
-                  },
+                child: Column(
+                  children: [
+                    CheckboxListTile(
+                      title: const Text('Producto destacado'),
+                      subtitle: const Text('Aparecerá en "Ofertas Flash"'),
+                      value: _featured,
+                      onChanged: (value) {
+                        setState(() => _featured = value ?? false);
+                      },
+                    ),
+                    const Divider(height: 1),
+                    SwitchListTile(
+                      title: const Text('Producto activo'),
+                      subtitle: Text(
+                        _isActive
+                            ? 'Visible en el catálogo'
+                            : 'Oculto del catálogo',
+                        style: TextStyle(
+                          color: _isActive ? Colors.green : Colors.grey,
+                        ),
+                      ),
+                      value: _isActive,
+                      activeColor: Colors.green,
+                      onChanged: (value) {
+                        setState(() => _isActive = value);
+                      },
+                    ),
+                  ],
                 ),
               ),
             ),

@@ -26,18 +26,66 @@ class WishlistService {
 
       print('🔍 Obteniendo wishlist para usuario: $userId');
 
-      // Usar la vista wishlist_with_details que incluye datos del producto
+      // Query directa a wishlist + products join (evita el JOIN con auth.users
+      // que causa "permission denied for table users" con la vista)
       final response = await _client
-          .from('wishlist_with_details')
-          .select()
+          .from('wishlist')
+          .select('''
+            id,
+            user_id,
+            product_id,
+            size,
+            notified_low_stock,
+            notified_sale,
+            created_at,
+            products!inner(
+              name,
+              slug,
+              price,
+              sale_price,
+              is_on_sale,
+              images,
+              product_sizes(
+                size,
+                stock
+              )
+            )
+          ''')
           .eq('user_id', userId)
           .order('created_at', ascending: false);
 
-      print('✅ Wishlist obtenida: ${response.length} items');
+      print('✅ Wishlist obtenida: ${(response as List).length} items');
 
-      return (response as List)
-          .map((json) => WishlistItemModel.fromJson(json))
-          .toList();
+      return (response as List).map((json) {
+        final product = json['products'] as Map<String, dynamic>?;
+        final itemSize = json['size'] as String;
+
+        // Buscar el stock de la talla específica dentro de product_sizes
+        final allSizes =
+            (product?['product_sizes'] as List<dynamic>?) ?? <dynamic>[];
+        final sizeEntry = allSizes.cast<Map<String, dynamic>>().firstWhere(
+          (s) => s['size'] == itemSize,
+          orElse: () => {'size': itemSize, 'stock': 0},
+        );
+        final sizeStock = sizeEntry['stock'] as int? ?? 0;
+
+        return WishlistItemModel.fromJson({
+          'id': json['id'],
+          'user_id': json['user_id'],
+          'product_id': json['product_id'],
+          'size': itemSize,
+          'notified_low_stock': json['notified_low_stock'],
+          'notified_sale': json['notified_sale'],
+          'created_at': json['created_at'],
+          'product_name': product?['name'],
+          'product_slug': product?['slug'],
+          'product_price': product?['price'],
+          'product_sale_price': product?['sale_price'],
+          'product_is_on_sale': product?['is_on_sale'] ?? false,
+          'product_images': product?['images'],
+          'size_stock': sizeStock,
+        });
+      }).toList();
     } catch (e) {
       print('❌ Error obteniendo wishlist: $e');
       rethrow;

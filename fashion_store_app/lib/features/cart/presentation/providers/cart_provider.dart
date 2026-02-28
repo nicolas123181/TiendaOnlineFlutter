@@ -29,19 +29,23 @@ class CartNotifier extends Notifier<CartState> {
     required ProductModel product,
     required String size,
     int quantity = 1,
+    int? sizeStock,
   }) {
     final key = '${product.id}-$size';
     final currentItems = Map<String, CartItemModel>.from(state.items);
+    final effectiveMaxStock = sizeStock ?? product.stock;
 
     if (currentItems.containsKey(key)) {
       // Actualizar cantidad si ya existe
       final existingItem = currentItems[key]!;
-      final newQuantity = (existingItem.quantity + quantity).clamp(
+      // Actualizar maxStock por si cambió el stock de la talla
+      final updatedItem = existingItem.copyWith(maxStock: effectiveMaxStock);
+      final newQuantity = (updatedItem.quantity + quantity).clamp(
         1,
-        existingItem.maxStock,
+        effectiveMaxStock,
       );
 
-      currentItems[key] = existingItem.copyWith(quantity: newQuantity);
+      currentItems[key] = updatedItem.copyWith(quantity: newQuantity);
     } else {
       // Añadir nuevo item
       currentItems[key] = CartItemModel(
@@ -49,10 +53,10 @@ class CartNotifier extends Notifier<CartState> {
         name: product.name,
         slug: product.slug,
         price: product.price,
-        quantity: quantity.clamp(1, product.stock),
+        quantity: quantity.clamp(1, effectiveMaxStock),
         size: size,
         imageUrl: product.mainImage,
-        maxStock: product.stock,
+        maxStock: effectiveMaxStock,
         salePrice: product.salePrice,
         isOnSale: product.isOnSale,
       );

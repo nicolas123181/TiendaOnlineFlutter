@@ -1,7 +1,11 @@
 // Provider para administración de categorías
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
+
+import '../../../../shared/services/cloudinary_service.dart';
 import '../../../../shared/services/supabase_service.dart';
+import '../../../categories/presentation/providers/categories_provider.dart';
 
 /// Provider para acciones de categorías (crear, editar, eliminar)
 final categoryActionsProvider = Provider((ref) {
@@ -13,10 +17,22 @@ class CategoryActions {
 
   CategoryActions(this.ref);
 
+  /// Subir imagen de categoría a Cloudinary
+  Future<String> uploadCategoryImage(XFile imageFile) async {
+    final bytes = await imageFile.readAsBytes();
+    final result = await CloudinaryService.uploadImage(
+      imageBytes: bytes,
+      fileName: imageFile.name,
+      folder: 'categorias',
+    );
+    return result.url;
+  }
+
   /// Crear nueva categoría
   Future<void> createCategory({
     required String name,
     required String description,
+    String? imageUrl,
   }) async {
     final supabase = ref.read(supabaseClientProvider);
 
@@ -27,7 +43,10 @@ class CategoryActions {
       'name': name,
       'slug': slug,
       'description': description,
+      if (imageUrl != null) 'image_url': imageUrl,
     });
+
+    ref.invalidate(categoriesProvider);
   }
 
   /// Actualizar categoría existente
@@ -35,13 +54,23 @@ class CategoryActions {
     required int categoryId,
     required String name,
     required String description,
+    String? imageUrl,
   }) async {
     final supabase = ref.read(supabaseClientProvider);
 
+    final slug = _generateSlug(name);
+
     await supabase
         .from('categories')
-        .update({'name': name, 'description': description})
+        .update({
+          'name': name,
+          'slug': slug,
+          'description': description,
+          if (imageUrl != null) 'image_url': imageUrl,
+        })
         .eq('id', categoryId);
+
+    ref.invalidate(categoriesProvider);
   }
 
   /// Eliminar categoría
@@ -62,6 +91,7 @@ class CategoryActions {
 
     // Eliminar categoría
     await supabase.from('categories').delete().eq('id', categoryId);
+    ref.invalidate(categoriesProvider);
     return true;
   }
 

@@ -1,6 +1,12 @@
 // Provider para administración de devoluciones
 
+import 'dart:convert';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:http/http.dart' as http;
+
+import '../../../../config/constants/app_constants.dart';
 import '../../../../shared/services/supabase_service.dart';
 import '../../data/models/return_model.dart';
 
@@ -78,62 +84,160 @@ class ReturnActions {
 
   ReturnActions(this.ref);
 
-  /// Marcar devolución como recibida
-  Future<void> markAsReceived(int returnId) async {
-    final supabase = ref.read(supabaseClientProvider);
+  /// Llamada centralizada a la Web API /api/admin/update-return
+  /// que maneja: emails, reembolso Stripe, restauración de stock y factura rectificativa.
+  /// Si la API falla, hace fallback a Supabase directo (sin email).
+  Future<bool> _callUpdateReturnApi({
+    required int returnId,
+    required String status,
+    String? adminNotes,
+    double? refundAmount,
+  }) async {
+    final apiKey = AppConstants.adminApiKey;
+    final baseUrl = AppConstants.webApiBaseUrl;
 
-    await supabase
-        .from('returns')
-        .update({
-          'status': 'received',
-          'received_at': DateTime.now().toIso8601String(),
-          'updated_at': DateTime.now().toIso8601String(),
-        })
-        .eq('id', returnId);
+    if (apiKey.isEmpty) {
+      debugPrint(
+        '[ReturnActions] ADMIN_API_KEY vacía, no se puede llamar a la API web',
+      );
+      return false;
+    }
+
+    try {
+      final body = <String, dynamic>{'returnId': returnId, 'status': status};
+
+      if (adminNotes != null && adminNotes.isNotEmpty) {
+        body['adminNotes'] = adminNotes;
+      }
+
+      if (refundAmount != null) {
+        body['refundAmount'] = refundAmount;
+      }
+
+      debugPrint(
+        '[ReturnActions] Llamando a $baseUrl/api/admin/update-return con status=$status',
+      );
+
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/api/admin/update-return'),
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer $apiKey',
+            },
+            body: jsonEncode(body),
+          )
+          .timeout(const Duration(seconds: 30));
+
+      debugPrint(
+        '[ReturnActions] Respuesta API: ${response.statusCode} - ${response.body}',
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success'] == true) {
+          debugPrint(
+            '[ReturnActions] API exitosa. Email enviado: ${data['emailSent']}',
+          );
+          return true;
+        }
+      }
+
+      debugPrint('[ReturnActions] API devolvió error: ${response.body}');
+      return false;
+    } catch (e) {
+      debugPrint('[ReturnActions] Error llamando API web: $e');
+      return false;
+    }
+  }
+
+  /// Marcar devolución como recibida (envía email de "paquete recibido, en revisión")
+  Future<void> markAsReceived(int returnId) async {
+    final apiSuccess = await _callUpdateReturnApi(
+      returnId: returnId,
+      status: 'received',
+    );
+
+    // Fallback: actualizar directamente en Supabase si la API falla (sin email)
+    if (!apiSuccess) {
+      debugPrint(
+        '[ReturnActions] Fallback a Supabase directo para markAsReceived',
+      );
+      final supabase = ref.read(supabaseClientProvider);
+      await supabase
+          .from('returns')
+          .update({
+            'status': 'received',
+            'received_at': DateTime.now().toIso8601String(),
+            'updated_at': DateTime.now().toIso8601String(),
+          })
+          .eq('id', returnId);
+    }
 
     _invalidateCache();
   }
 
-  /// Procesar reembolso
+  /// Procesar reembolso vía Web API (Stripe refund + email + stock + factura rectificativa)
   Future<void> processRefund({
     required int returnId,
-    String? stripeRefundId,
+    double? refundAmount,
   }) async {
-    final supabase = ref.read(supabaseClientProvider);
+    final apiSuccess = await _callUpdateReturnApi(
+      returnId: returnId,
+      status: 'refunded',
+      refundAmount: refundAmount,
+    );
 
-    await supabase
-        .from('returns')
-        .update({
-          'status': 'refunded',
-          'refunded_at': DateTime.now().toIso8601String(),
-          'updated_at': DateTime.now().toIso8601String(),
-          if (stripeRefundId != null) 'stripe_refund_id': stripeRefundId,
-        })
-        .eq('id', returnId);
+    // Fallback: solo actualizar estado en Supabase (SIN procesar Stripe, SIN email)
+    if (!apiSuccess) {
+      debugPrint(
+        '[ReturnActions] Fallback a Supabase directo para processRefund',
+      );
+      final supabase = ref.read(supabaseClientProvider);
+      await supabase
+          .from('returns')
+          .update({
+            'status': 'refunded',
+            'refunded_at': DateTime.now().toIso8601String(),
+            'updated_at': DateTime.now().toIso8601String(),
+          })
+          .eq('id', returnId);
+    }
 
     _invalidateCache();
   }
 
-  /// Rechazar devolución
+  /// Rechazar devolución (envía email al cliente con el motivo)
   Future<void> rejectReturn({
     required int returnId,
     required String reason,
   }) async {
-    final supabase = ref.read(supabaseClientProvider);
+    final apiSuccess = await _callUpdateReturnApi(
+      returnId: returnId,
+      status: 'rejected',
+      adminNotes: reason,
+    );
 
-    await supabase
-        .from('returns')
-        .update({
-          'status': 'rejected',
-          'admin_notes': reason,
-          'updated_at': DateTime.now().toIso8601String(),
-        })
-        .eq('id', returnId);
+    // Fallback: actualizar directamente en Supabase (sin email)
+    if (!apiSuccess) {
+      debugPrint(
+        '[ReturnActions] Fallback a Supabase directo para rejectReturn',
+      );
+      final supabase = ref.read(supabaseClientProvider);
+      await supabase
+          .from('returns')
+          .update({
+            'status': 'rejected',
+            'admin_notes': reason,
+            'updated_at': DateTime.now().toIso8601String(),
+          })
+          .eq('id', returnId);
+    }
 
     _invalidateCache();
   }
 
-  /// Actualizar notas del admin
+  /// Actualizar notas del admin (no necesita email)
   Future<void> updateAdminNotes({
     required int returnId,
     required String notes,

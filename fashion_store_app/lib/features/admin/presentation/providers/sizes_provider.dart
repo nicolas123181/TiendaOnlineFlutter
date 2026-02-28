@@ -5,13 +5,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../shared/services/supabase_service.dart';
 import '../../data/models/product_size.dart';
 
-/// Provider para obtener tallas con bajo stock
+/// Provider para obtener tallas con bajo stock (incluye datos del producto)
 final lowStockSizesProvider = FutureProvider<List<ProductSize>>((ref) async {
   final supabase = ref.read(supabaseClientProvider);
 
   final response = await supabase
       .from('product_sizes')
-      .select('*')
+      .select('*, products(name, images)')
       .lte('stock', 5)
       .order('stock', ascending: true);
 
