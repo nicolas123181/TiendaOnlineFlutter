@@ -1,17 +1,27 @@
 // Servicio de Cloudinary para Flutter
 import 'dart:convert';
 import 'dart:typed_data';
+import 'package:crypto/crypto.dart';
 import 'package:http/http.dart' as http;
 
 import '../../config/constants/app_constants.dart';
 
 class CloudinaryService {
-  // Obtener credenciales desde AppConstants (que lee .env)
   static String get cloudName => AppConstants.cloudinaryCloudName;
-  static String get uploadPreset => AppConstants.cloudinaryUploadPreset;
+  static String get apiKey => AppConstants.cloudinaryApiKey;
+  static String get apiSecret => AppConstants.cloudinaryApiSecret;
 
-  /// Upload de imagen a Cloudinary
-  /// Retorna la URL de la imagen subida
+  /// Genera la firma SHA-1 para signed upload
+  static String _generateSignature(Map<String, String> params) {
+    // Ordenar params alfabéticamente y unir como key=value&...
+    final sortedKeys = params.keys.toList()..sort();
+    final paramString = sortedKeys.map((k) => '$k=${params[k]}').join('&');
+    final toSign = '$paramString$apiSecret';
+    final bytes = utf8.encode(toSign);
+    return sha1.convert(bytes).toString();
+  }
+
+  /// Upload de imagen a Cloudinary usando signed upload (API key + secret)
   static Future<CloudinaryUploadResult> uploadImage({
     required Uint8List imageBytes,
     required String fileName,
@@ -19,30 +29,36 @@ class CloudinaryService {
     Function(double)? onProgress,
   }) async {
     try {
+      final timestamp = (DateTime.now().millisecondsSinceEpoch ~/ 1000).toString();
+
+      // Parámetros que se firman (deben coincidir exactamente con los enviados)
+      final signParams = {
+        'folder': folder,
+        'timestamp': timestamp,
+      };
+
+      final signature = _generateSignature(signParams);
+
       final uri = Uri.parse(
         'https://api.cloudinary.com/v1_1/$cloudName/image/upload',
       );
 
       final request = http.MultipartRequest('POST', uri);
 
-      // Agregar archivo
       request.files.add(
         http.MultipartFile.fromBytes('file', imageBytes, filename: fileName),
       );
 
-      // Agregar parámetros
-      request.fields['upload_preset'] = uploadPreset;
+      request.fields['api_key'] = apiKey;
+      request.fields['timestamp'] = timestamp;
+      request.fields['signature'] = signature;
       request.fields['folder'] = folder;
-      request.fields['quality'] = 'auto:good';
-      request.fields['fetch_format'] = 'auto';
 
-      // Enviar request
       final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
 
       if (streamedResponse.statusCode == 200) {
-        final response = await http.Response.fromStream(streamedResponse);
         final Map<String, dynamic> data = json.decode(response.body);
-
         return CloudinaryUploadResult(
           url: data['secure_url'],
           publicId: data['public_id'],
@@ -50,8 +66,9 @@ class CloudinaryService {
           height: data['height'],
         );
       } else {
+        final body = json.decode(response.body);
         throw Exception(
-          'Error al subir imagen: ${streamedResponse.statusCode}',
+          'Error Cloudinary ${streamedResponse.statusCode}: ${body['error']?['message'] ?? response.body}',
         );
       }
     } catch (e) {

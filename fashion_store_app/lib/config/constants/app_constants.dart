@@ -68,10 +68,13 @@ class AppConstants {
   // 2. Cloud Name: Settings → Account → Cloud name
   // 3. Upload Preset: Settings → Upload → Add upload preset (unsigned)
   static String get cloudinaryCloudName =>
-      dotenv.env['CLOUDINARY_CLOUD_NAME'] ?? 'TU_CLOUD_NAME_AQUI';
+      dotenv.env['CLOUDINARY_CLOUD_NAME'] ?? '';
 
-  static String get cloudinaryUploadPreset =>
-      dotenv.env['CLOUDINARY_UPLOAD_PRESET'] ?? 'TU_UPLOAD_PRESET_AQUI';
+  static String get cloudinaryApiKey =>
+      dotenv.env['CLOUDINARY_API_KEY'] ?? '';
+
+  static String get cloudinaryApiSecret =>
+      dotenv.env['CLOUDINARY_API_SECRET'] ?? '';
 
   // ============================================
   // WEB API - Para funcionalidades que usan el servidor web
