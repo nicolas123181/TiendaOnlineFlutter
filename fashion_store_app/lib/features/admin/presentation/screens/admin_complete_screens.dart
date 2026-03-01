@@ -810,6 +810,38 @@ class AdminReturnsScreenComplete extends ConsumerWidget {
                             (r) => _ReceivedReturnCard(
                               returnModel: r,
                               onProcessRefund: () async {
+                                // Diálogo de confirmación antes de procesar el reembolso
+                                final confirmed = await showDialog<bool>(
+                                  context: context,
+                                  builder: (ctx) => AlertDialog(
+                                    title: const Text('Confirmar Reembolso'),
+                                    content: Text(
+                                      '¿Procesar reembolso de ${r.refundAmountInEuros.toStringAsFixed(2)} € '
+                                      'para la devolución ${r.returnNumber}?\n\n'
+                                      'Se enviará un email a ${r.customerEmail}.',
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.pop(ctx, false),
+                                        child: const Text('Cancelar'),
+                                      ),
+                                      ElevatedButton(
+                                        onPressed: () =>
+                                            Navigator.pop(ctx, true),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.green,
+                                          foregroundColor: Colors.white,
+                                        ),
+                                        child: const Text(
+                                          'Confirmar Reembolso',
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                                if (confirmed != true) return;
+
                                 final emailSent = await ref
                                     .read(returnActionsProvider)
                                     .processRefund(returnId: r.id);

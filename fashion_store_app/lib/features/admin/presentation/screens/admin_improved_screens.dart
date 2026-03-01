@@ -12,6 +12,7 @@ import '../../../../config/theme/app_text_styles.dart';
 import '../../../../shared/services/supabase_service.dart';
 import '../../../categories/data/models/category_model.dart';
 import '../../../categories/presentation/providers/categories_provider.dart';
+import '../../../../shared/utils/text_utils.dart';
 import '../providers/categories_admin_provider.dart';
 import '../providers/orders_admin_provider.dart';
 
@@ -1066,7 +1067,9 @@ class _AdminOrdersScreenImprovedState
 
             // Customer info
             Text(
-              order['customer_name'] ?? 'Cliente',
+              TextUtils.fixEncoding(
+                order['customer_name'] as String? ?? 'Cliente',
+              ),
               style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
             ),
             Text(
@@ -1155,8 +1158,9 @@ class _AdminOrdersScreenImprovedState
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
-                            '${item['product_name'] ?? 'Producto'} x ${item['quantity'] ?? 1}',
+                            '${TextUtils.fixEncoding(item['product_name'] as String? ?? 'Producto')} x ${item['quantity'] ?? 1}',
                             style: const TextStyle(fontSize: 11),
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ),
@@ -1268,15 +1272,17 @@ class _AdminOrdersScreenImprovedState
     Color color,
     VoidCallback onPressed,
   ) {
-    return ElevatedButton.icon(
-      onPressed: onPressed,
-      icon: Icon(icon, size: 16),
-      label: Text(label),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: color,
-        foregroundColor: Colors.white,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+    return Flexible(
+      child: ElevatedButton.icon(
+        onPressed: onPressed,
+        icon: Icon(icon, size: 16),
+        label: Text(label, overflow: TextOverflow.ellipsis),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: color,
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
       ),
     );
   }
@@ -1317,7 +1323,9 @@ class _AdminOrdersScreenImprovedState
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              order['customer_name'] ?? 'Cliente',
+              TextUtils.fixEncoding(
+                order['customer_name'] as String? ?? 'Cliente',
+              ),
               style: const TextStyle(fontSize: 12),
             ),
             Text(
@@ -1665,7 +1673,9 @@ class _AdminOrdersScreenImprovedState
                         Text('Pedido #${order['id']}', style: AppTextStyles.h4),
                         const SizedBox(height: 4),
                         Text(
-                          order['customer_name'] ?? '',
+                          TextUtils.fixEncoding(
+                            order['customer_name'] as String? ?? '',
+                          ),
                           style: const TextStyle(fontSize: 14),
                         ),
                         if (order['customer_email'] != null)
@@ -1743,7 +1753,9 @@ class _AdminOrdersScreenImprovedState
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                item['product_name'] ?? 'Producto',
+                                TextUtils.fixEncoding(
+                                  item['product_name'] as String? ?? 'Producto',
+                                ),
                                 style: const TextStyle(
                                   fontWeight: FontWeight.w600,
                                   fontSize: 13,

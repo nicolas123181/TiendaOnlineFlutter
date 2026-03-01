@@ -1,5 +1,7 @@
 // Modelo para Facturas - Sincronizado con BD
 
+import '../../../../shared/utils/text_utils.dart';
+
 class Invoice {
   final int id;
   final String invoiceNumber;
@@ -71,7 +73,9 @@ class Invoice {
       id: (json['id'] as num).toInt(),
       invoiceNumber: json['invoice_number'] as String? ?? 'SIN-NÚMERO',
       orderId: (json['order_id'] as num).toInt(),
-      customerName: json['customer_name'] as String? ?? 'Sin nombre',
+      customerName: TextUtils.fixEncoding(
+        json['customer_name'] as String? ?? 'Sin nombre',
+      ),
       customerEmail: json['customer_email'] as String? ?? 'Sin email',
       customerAddress: json['customer_address'] as String?,
       customerCity: json['customer_city'] as String?,

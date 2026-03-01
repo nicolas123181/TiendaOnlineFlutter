@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../shared/utils/text_utils.dart';
 import '../../../../shared/services/supabase_service.dart'
     hide currentUserProvider;
 import '../../../auth/presentation/providers/auth_provider.dart'
@@ -66,7 +67,9 @@ class UserOrder {
       carrier: carrierData != null
           ? ShippingCarrier.fromJson(carrierData)
           : null,
-      customerName: json['customer_name'] as String? ?? 'Cliente',
+      customerName: TextUtils.fixEncoding(
+        json['customer_name'] as String? ?? 'Cliente',
+      ),
       customerEmail: json['customer_email'] as String? ?? '',
       customerPhone: json['customer_phone'] as String?,
       customerAddress: json['customer_address'] as String? ?? '',
@@ -126,7 +129,9 @@ class OrderItem {
     return OrderItem(
       id: json['id'] as int,
       productId: json['product_id'] as int?,
-      productName: json['product_name'] as String? ?? 'Producto',
+      productName: TextUtils.fixEncoding(
+        json['product_name'] as String? ?? 'Producto',
+      ),
       productPrice: json['product_price'] as int? ?? 0,
       quantity: json['quantity'] as int? ?? 1,
       size: json['size'] as String?,

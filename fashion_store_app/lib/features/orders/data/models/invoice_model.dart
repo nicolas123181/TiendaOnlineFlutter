@@ -1,3 +1,5 @@
+import '../../../../shared/utils/text_utils.dart';
+
 /// Modelo de Factura
 class Invoice {
   final int id;
@@ -122,7 +124,9 @@ class InvoiceItem {
     return InvoiceItem(
       id: (json['id'] as num).toInt(),
       invoiceId: (json['invoice_id'] as num).toInt(),
-      productName: json['product_name'] as String? ?? 'Producto',
+      productName: TextUtils.fixEncoding(
+        json['product_name'] as String? ?? 'Producto',
+      ),
       productSize: json['product_size'] as String?,
       quantity: (json['quantity'] as num).toInt(),
       unitPrice: (json['unit_price'] as num).toInt(),

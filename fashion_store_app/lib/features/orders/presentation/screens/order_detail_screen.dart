@@ -739,7 +739,7 @@ class _InvoiceCardState extends ConsumerState<_InvoiceCard> {
                       ),
                       Text(
                         _isCancelledOrRefunded
-                            ? 'Nota de crédito disponible'
+                            ? 'Factura rectificativa disponible'
                             : 'Factura disponible para este pedido',
                         style: textTheme.labelSmall?.copyWith(
                           color: colorScheme.onSurface.withValues(alpha: 0.7),
@@ -753,7 +753,7 @@ class _InvoiceCardState extends ConsumerState<_InvoiceCard> {
             const SizedBox(height: 16),
             Text(
               _isCancelledOrRefunded
-                  ? 'Descarga la factura rectificativa (nota de crédito) de este pedido.'
+                  ? 'Descarga la factura rectificativa de este pedido.'
                   : 'Pulsa el botón para descargar la factura de este pedido en formato PDF.',
               style: AppTextStyles.bodySmall.copyWith(
                 color: colorScheme.onSurface.withValues(alpha: 0.7),
@@ -778,7 +778,7 @@ class _InvoiceCardState extends ConsumerState<_InvoiceCard> {
                   _loading
                       ? 'Descargando...'
                       : _isCancelledOrRefunded
-                      ? 'Descargar Nota de Crédito'
+                      ? 'Descargar Factura Rectificativa'
                       : 'Descargar Factura',
                 ),
                 style: ElevatedButton.styleFrom(

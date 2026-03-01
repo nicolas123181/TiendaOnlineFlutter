@@ -138,34 +138,31 @@ class _AddToCartButtonState extends ConsumerState<AddToCartButton>
       SnackBar(
         content: Row(
           children: [
-            const Icon(Icons.check_circle, color: Colors.white),
-            const SizedBox(width: 12),
+            const Icon(Icons.check_circle, color: Colors.white, size: 20),
+            const SizedBox(width: 10),
             Expanded(
               child: Text(
                 '${widget.product.name} añadido al carrito',
-                style: AppTextStyles.bodyMedium.copyWith(color: Colors.white),
-                maxLines: 1,
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: Colors.white,
+                  fontSize: 13,
+                ),
+                maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                softWrap: false,
               ),
-            ),
-            IconButton(
-              icon: const Icon(Icons.close, color: Colors.white, size: 18),
-              onPressed: () => messenger.hideCurrentSnackBar(),
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
-              tooltip: 'Cerrar',
             ),
           ],
         ),
         backgroundColor: AppColors.primary,
         behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         action: SnackBarAction(
           label: 'VER CARRITO',
           textColor: AppColors.accent,
           onPressed: () => context.push('/cart'),
         ),
-        duration: const Duration(seconds: 5),
+        duration: const Duration(seconds: 4),
       ),
     );
 

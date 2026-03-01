@@ -188,55 +188,6 @@ class SettingsScreen extends ConsumerWidget {
                   ],
                 ),
 
-                // Sección de notificaciones
-                const SizedBox(height: 8),
-                _SettingsSection(
-                  title: 'NOTIFICACIONES',
-                  icon: Icons.notifications_outlined,
-                  children: [
-                    _SettingsTile(
-                      icon: Icons.email_outlined,
-                      title: 'Alertas por Email',
-                      subtitle: 'Ofertas y stock bajo en favoritos',
-                      trailing: Switch(
-                        value: true,
-                        onChanged: (value) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                value
-                                    ? 'Notificaciones activadas'
-                                    : 'Notificaciones desactivadas',
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                      onTap: null,
-                    ),
-                    _SettingsTile(
-                      icon: Icons.local_offer_outlined,
-                      title: 'Newsletter',
-                      subtitle: 'Recibir novedades y promociones',
-                      trailing: Switch(
-                        value: true,
-                        onChanged: (value) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                value
-                                    ? 'Newsletter activado'
-                                    : 'Newsletter desactivado',
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                      onTap: null,
-                    ),
-                  ],
-                ),
-
                 // Sección de información
                 const SizedBox(height: 8),
                 _SettingsSection(

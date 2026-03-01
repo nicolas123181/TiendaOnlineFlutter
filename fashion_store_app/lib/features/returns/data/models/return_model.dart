@@ -1,3 +1,5 @@
+import '../../../../shared/utils/text_utils.dart';
+
 /// Modelo de Devolución
 class ReturnRequest {
   final int id;
@@ -28,13 +30,11 @@ class ReturnRequest {
   });
 
   factory ReturnRequest.fromJson(Map<String, dynamic> json) {
-    final itemsFromReturnItems =
-      (json['return_items'] as List<dynamic>?)
+    final itemsFromReturnItems = (json['return_items'] as List<dynamic>?)
         ?.map((e) => ReturnItem.fromJson(e as Map<String, dynamic>))
         .toList();
 
-    final itemsFromArray =
-      (json['items'] as List<dynamic>?)
+    final itemsFromArray = (json['items'] as List<dynamic>?)
         ?.map((e) => ReturnItem.fromJson(e as Map<String, dynamic>))
         .toList();
 
@@ -46,7 +46,7 @@ class ReturnRequest {
       status: json['status'] as String,
       reason: json['reason'] as String,
       customerNotes:
-        (json['customer_notes'] ?? json['reason_details']) as String?,
+          (json['customer_notes'] ?? json['reason_details']) as String?,
       refundAmount: (json['refund_amount'] as int?) ?? 0,
       returnLabelUrl: json['return_label_url'] as String?,
       trackingNumber: json['tracking_number'] as String?,
@@ -105,7 +105,9 @@ class ReturnItem {
       id: (json['id'] as int?) ?? 0,
       returnId: (json['return_id'] as int?) ?? 0,
       orderItemId: (json['order_item_id'] as int?) ?? 0,
-      productName: (json['product_name'] as String?) ?? 'Producto',
+      productName: TextUtils.fixEncoding(
+        (json['product_name'] as String?) ?? 'Producto',
+      ),
       size: json['size'] as String?,
       quantity: (json['quantity'] as int?) ?? 0,
       refundPrice: refundPrice,

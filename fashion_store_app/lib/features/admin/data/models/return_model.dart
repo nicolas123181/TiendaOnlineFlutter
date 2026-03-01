@@ -1,5 +1,7 @@
 // Modelo para Devoluciones
 
+import '../../../../shared/utils/text_utils.dart';
+
 class ReturnModel {
   final int id;
   final String returnNumber;
@@ -55,7 +57,9 @@ class ReturnModel {
       returnNumber: json['return_number'] as String? ?? 'RET-???',
       orderId: json['order_id'] as int,
       customerEmail: json['customer_email'] as String? ?? '',
-      customerName: json['customer_name'] as String? ?? 'Sin nombre',
+      customerName: TextUtils.fixEncoding(
+        json['customer_name'] as String? ?? 'Sin nombre',
+      ),
       reason: json['reason'] as String? ?? 'other',
       reasonDetails: json['reason_details'] as String?,
       items: items,
@@ -134,7 +138,9 @@ class ReturnItem {
   factory ReturnItem.fromJson(Map<String, dynamic> json) {
     return ReturnItem(
       productId: json['product_id'] as int? ?? 0,
-      productName: json['product_name'] as String? ?? 'Producto',
+      productName: TextUtils.fixEncoding(
+        json['product_name'] as String? ?? 'Producto',
+      ),
       size: json['size'] as String?,
       quantity: json['quantity'] as int? ?? 1,
       unitPrice: json['unit_price'] as int? ?? 0,
