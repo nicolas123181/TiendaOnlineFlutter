@@ -1,5 +1,6 @@
 // Pantallas para Tallas, Devoluciones y Facturas del Admin
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -32,7 +33,13 @@ class AdminSizesScreen extends ConsumerWidget {
               children: [
                 const Icon(Icons.straighten, size: 20),
                 const SizedBox(width: 8),
-                Text('Sistemas de Tallas', style: AppTextStyles.h3),
+                Flexible(
+                  child: Text(
+                    'Sistemas de Tallas',
+                    style: AppTextStyles.h3,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 8),
@@ -96,7 +103,13 @@ class AdminSizesScreen extends ConsumerWidget {
               children: [
                 const Icon(Icons.warning_amber, size: 20, color: Colors.orange),
                 const SizedBox(width: 8),
-                Text('Stock Bajo por Talla', style: AppTextStyles.h3),
+                Flexible(
+                  child: Text(
+                    'Stock Bajo por Talla',
+                    style: AppTextStyles.h3,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 8),
@@ -130,8 +143,11 @@ class AdminSizesScreen extends ConsumerWidget {
                                   color: Colors.green,
                                 ),
                                 const SizedBox(width: 8),
-                                const Text(
-                                  'Todas las tallas tienen stock suficiente',
+                                const Flexible(
+                                  child: Text(
+                                    'Todas las tallas tienen stock suficiente',
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                                 ),
                               ],
                             ),
@@ -144,35 +160,109 @@ class AdminSizesScreen extends ConsumerWidget {
 
                 return Column(
                   children: items.map((item) {
-                    // item es ProductSize, no un Map
                     final productSize = item;
                     final stock = productSize.stock;
                     final size = productSize.size;
+                    final hasImage =
+                        productSize.productImage != null &&
+                        productSize.productImage!.isNotEmpty;
 
                     return Card(
                       margin: const EdgeInsets.only(bottom: 12),
                       color: stock == 0 ? Colors.red[50] : Colors.orange[50],
-                      child: ListTile(
-                        leading: const Icon(Icons.checkroom, size: 40),
-                        title: Text('Producto ID: ${productSize.productId}'),
-                        subtitle: Text('Talla: $size'),
-
-                        trailing: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: stock == 0 ? Colors.red : Colors.orange,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            stock == 0 ? 'AGOTADO' : '$stock uds',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Row(
+                          children: [
+                            // Imagen del producto
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: hasImage
+                                  ? CachedNetworkImage(
+                                      imageUrl: productSize.productImage!,
+                                      width: 56,
+                                      height: 56,
+                                      fit: BoxFit.cover,
+                                      placeholder: (_, __) => Container(
+                                        width: 56,
+                                        height: 56,
+                                        color: Colors.grey[200],
+                                        child: const Icon(
+                                          Icons.image,
+                                          color: Colors.grey,
+                                        ),
+                                      ),
+                                      errorWidget: (_, __, ___) => Container(
+                                        width: 56,
+                                        height: 56,
+                                        color: Colors.grey[200],
+                                        child: const Icon(
+                                          Icons.broken_image,
+                                          color: Colors.grey,
+                                        ),
+                                      ),
+                                    )
+                                  : Container(
+                                      width: 56,
+                                      height: 56,
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey[200],
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: const Icon(
+                                        Icons.checkroom,
+                                        color: Colors.grey,
+                                      ),
+                                    ),
                             ),
-                          ),
+                            const SizedBox(width: 12),
+                            // Nombre y talla
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    productSize.productName ??
+                                        'Producto #${productSize.productId}',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 14,
+                                    ),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Talla: $size',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey[600],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            // Badge stock
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: stock == 0 ? Colors.red : Colors.orange,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                stock == 0 ? 'AGOTADO' : '$stock uds',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     );

@@ -279,7 +279,14 @@ class _CompleteCheckoutScreenState
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Información de Envío', style: AppTextStyles.h4),
+                Flexible(
+                  child: Text(
+                    'Información de Envío',
+                    style: AppTextStyles.h4,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const SizedBox(width: 8),
                 // Botón para cargar dirección guardada
                 Consumer(
                   builder: (context, ref, _) {
@@ -673,12 +680,20 @@ class _CompleteCheckoutScreenState
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Row(
-              children: [
-                Icon(icon, size: 20, color: AppColors.primary),
-                const SizedBox(width: 8),
-                Text(title, style: AppTextStyles.labelLarge),
-              ],
+            Flexible(
+              child: Row(
+                children: [
+                  Icon(icon, size: 20, color: AppColors.primary),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text(
+                      title,
+                      style: AppTextStyles.labelLarge,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
             ),
             if (onEdit != null)
               TextButton(onPressed: onEdit, child: const Text('Editar')),
@@ -718,7 +733,13 @@ class _CompleteCheckoutScreenState
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Subtotal (${items.length} artículos)'),
+                Flexible(
+                  child: Text(
+                    'Subtotal (${items.length} artículos)',
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const SizedBox(width: 8),
                 Text(_formatPrice(subtotal), style: AppTextStyles.labelMedium),
               ],
             ),

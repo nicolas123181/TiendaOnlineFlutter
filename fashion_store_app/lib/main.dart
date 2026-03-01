@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter/foundation.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'dart:async';
 
 import 'config/theme/app_theme.dart';
 import 'config/router/app_router.dart';
@@ -81,15 +83,27 @@ class VantageApp extends ConsumerStatefulWidget {
 
 class _VantageAppState extends ConsumerState<VantageApp>
     with WidgetsBindingObserver {
+  bool _showBrandSplash = true;
+  double _brandSplashOpacity = 1;
+  bool _brandSplashContentVisible = false;
+  Timer? _brandSplashFadeOutTimer;
+  Timer? _brandSplashHideTimer;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _playBrandSplash();
+    });
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _brandSplashFadeOutTimer?.cancel();
+    _brandSplashHideTimer?.cancel();
     super.dispose();
   }
 
@@ -98,6 +112,36 @@ class _VantageAppState extends ConsumerState<VantageApp>
     if (state == AppLifecycleState.resumed) {
       _handlePendingCheckoutReload();
     }
+  }
+
+  void _playBrandSplash() {
+    _brandSplashFadeOutTimer?.cancel();
+    _brandSplashHideTimer?.cancel();
+
+    if (!mounted) return;
+
+    setState(() {
+      _showBrandSplash = true;
+      _brandSplashOpacity = 1;
+      _brandSplashContentVisible = false;
+    });
+
+    // Entrada visible del contenido
+    Timer(const Duration(milliseconds: 50), () {
+      if (!mounted) return;
+      setState(() => _brandSplashContentVisible = true);
+    });
+
+    // Salida con fade del overlay
+    _brandSplashFadeOutTimer = Timer(const Duration(milliseconds: 2600), () {
+      if (!mounted) return;
+      setState(() => _brandSplashOpacity = 0);
+    });
+
+    _brandSplashHideTimer = Timer(const Duration(milliseconds: 3650), () {
+      if (!mounted) return;
+      setState(() => _showBrandSplash = false);
+    });
   }
 
   Future<void> _handlePendingCheckoutReload() async {
@@ -147,9 +191,103 @@ class _VantageAppState extends ConsumerState<VantageApp>
 
         return MediaQuery(
           data: mediaQueryData.copyWith(textScaler: TextScaler.linear(scale)),
-          child: child!,
+          child: Stack(
+            children: [
+              child!,
+              if (_showBrandSplash)
+                AnimatedOpacity(
+                  opacity: _brandSplashOpacity,
+                  duration: const Duration(milliseconds: 1000),
+                  curve: Curves.easeOutCubic,
+                  child: _BrandLaunchOverlay(
+                    contentVisible: _brandSplashContentVisible,
+                  ),
+                ),
+            ],
+          ),
         );
       },
+    );
+  }
+}
+
+class _BrandLaunchOverlay extends StatelessWidget {
+  final bool contentVisible;
+
+  const _BrandLaunchOverlay({required this.contentVisible});
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Material(
+      color: Theme.of(context).scaffoldBackgroundColor,
+      child: Center(
+        child: AnimatedOpacity(
+          duration: const Duration(milliseconds: 700),
+          curve: Curves.easeOutCubic,
+          opacity: contentVisible ? 1 : 0,
+          child: AnimatedSlide(
+            duration: const Duration(milliseconds: 700),
+            curve: Curves.easeOutCubic,
+            offset: contentVisible ? Offset.zero : const Offset(0, 0.08),
+            child: AnimatedScale(
+              duration: const Duration(milliseconds: 700),
+              curve: Curves.easeOutCubic,
+              scale: contentVisible ? 1 : 0.93,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: Image.asset(
+                      'assets/branding/vantage-logo.jpg',
+                      width: 160,
+                      height: 160,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                  const SizedBox(height: 42),
+                  Text(
+                    'VANTAGE',
+                    style: GoogleFonts.playfairDisplay(
+                      textStyle: textTheme.headlineMedium,
+                      fontSize: 44,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 5.2,
+                      color: colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Text(
+                    'since 2024',
+                    style: GoogleFonts.cormorantGaramond(
+                      textStyle: textTheme.bodyMedium,
+                      fontSize: 24,
+                      letterSpacing: 2.4,
+                      fontWeight: FontWeight.w600,
+                      color: colorScheme.onSurface.withValues(alpha: 0.9),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Text(
+                    'Elegancia Atemporal',
+                    style: GoogleFonts.cormorantGaramond(
+                      textStyle: textTheme.titleMedium,
+                      fontSize: 28,
+                      letterSpacing: 1.7,
+                      fontWeight: FontWeight.w600,
+                      fontStyle: FontStyle.italic,
+                      color: colorScheme.onSurface.withValues(alpha: 0.92),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

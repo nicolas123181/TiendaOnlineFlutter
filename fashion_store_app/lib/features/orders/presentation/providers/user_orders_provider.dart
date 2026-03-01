@@ -87,6 +87,14 @@ class UserOrder {
         return 'Enviado';
       case 'delivered':
         return 'Entregado';
+      case 'return_pending':
+        return 'Devolución solicitada';
+      case 'return_in_transit':
+        return 'Devolución en tránsito';
+      case 'return_received':
+        return 'Devolución recibida';
+      case 'refunded':
+        return 'Reembolsado';
       case 'cancelled':
         return 'Cancelado';
       default:
@@ -201,7 +209,61 @@ final userOrdersProvider = FutureProvider<List<UserOrder>>((ref) async {
       .eq('customer_email', user.email)
       .order('created_at', ascending: false);
 
-  return (response as List).map((json) => UserOrder.fromJson(json)).toList();
+  final ordersJson = List<Map<String, dynamic>>.from(response);
+  if (ordersJson.isEmpty) {
+    return [];
+  }
+
+  final orderIds = ordersJson
+      .map((order) => (order['id'] as num?)?.toInt())
+      .whereType<int>()
+      .toList();
+
+  final latestReturnStatusByOrder = <int, String>{};
+  if (orderIds.isNotEmpty) {
+    try {
+      final returnsResponse = await supabase
+          .from('returns')
+          .select('order_id, status, created_at, updated_at')
+          .inFilter('order_id', orderIds)
+          .order('created_at', ascending: false);
+
+      for (final raw in List<Map<String, dynamic>>.from(returnsResponse)) {
+        final orderId = (raw['order_id'] as num?)?.toInt();
+        final returnStatus = raw['status'] as String?;
+        if (orderId == null || returnStatus == null) continue;
+        latestReturnStatusByOrder.putIfAbsent(orderId, () => returnStatus);
+      }
+    } catch (_) {
+      // Si falla la lectura de devoluciones, mantenemos estado original del pedido
+    }
+  }
+
+  String resolveEffectiveStatus(String orderStatus, String? returnStatus) {
+    switch (returnStatus) {
+      case 'pending':
+        return 'return_pending';
+      case 'in_transit':
+        return 'return_in_transit';
+      case 'received':
+        return 'return_received';
+      case 'refunded':
+        return 'refunded';
+      default:
+        return orderStatus;
+    }
+  }
+
+  return ordersJson.map((json) {
+    final orderId = (json['id'] as num?)?.toInt();
+    final orderStatus = json['status'] as String? ?? 'pending';
+    final returnStatus = orderId != null
+        ? latestReturnStatusByOrder[orderId]
+        : null;
+
+    final effectiveStatus = resolveEffectiveStatus(orderStatus, returnStatus);
+    return UserOrder.fromJson({...json, 'status': effectiveStatus});
+  }).toList();
 });
 
 /// Provider para un pedido específico

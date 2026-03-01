@@ -34,6 +34,7 @@ import '../../features/settings/presentation/screens/settings_screen.dart';
 import '../../features/settings/presentation/screens/legal_screens.dart';
 import '../../features/settings/presentation/screens/change_password_screen.dart';
 import '../../features/products/presentation/screens/size_recommender_screen.dart';
+import '../../features/returns/presentation/screens/return_screens.dart';
 
 /// Provider del router
 final routerProvider = Provider<GoRouter>((ref) {
@@ -371,6 +372,16 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final orderId = int.parse(state.pathParameters['orderId']!);
           return InvoiceScreen(orderId: orderId);
+        },
+      ),
+
+      // Solicitar devolución
+      GoRoute(
+        path: '/return/:orderId',
+        name: 'createReturn',
+        builder: (context, state) {
+          final orderId = int.parse(state.pathParameters['orderId']!);
+          return CreateReturnScreen(orderId: orderId);
         },
       ),
 

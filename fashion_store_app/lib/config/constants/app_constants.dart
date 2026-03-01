@@ -83,6 +83,8 @@ class AppConstants {
 
   static String get adminApiKey => dotenv.env['ADMIN_API_KEY'] ?? '';
 
+  static String get resendApiKey => dotenv.env['RESEND_API_KEY'] ?? '';
+
   // ============================================
   // TALLAS DISPONIBLES
   // ============================================

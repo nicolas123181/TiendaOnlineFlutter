@@ -81,13 +81,17 @@ class _CouponCard extends ConsumerWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  coupon.code,
-                  style: AppTextStyles.h4.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.primary,
+                Flexible(
+                  child: Text(
+                    coupon.code,
+                    style: AppTextStyles.h4.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primary,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
+                const SizedBox(width: 8),
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 12,
@@ -133,20 +137,24 @@ class _CouponCard extends ConsumerWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                TextButton(
-                  onPressed: () {
-                    ref
-                        .read(couponActionsProvider)
-                        .toggleCoupon(coupon.id, coupon.isActive);
-                  },
-                  child: Text(coupon.isActive ? 'Desactivar' : 'Activar'),
+                Flexible(
+                  child: TextButton(
+                    onPressed: () {
+                      ref
+                          .read(couponActionsProvider)
+                          .toggleCoupon(coupon.id, coupon.isActive);
+                    },
+                    child: Text(coupon.isActive ? 'Desactivar' : 'Activar'),
+                  ),
                 ),
-                TextButton(
-                  onPressed: () {
-                    ref.read(couponActionsProvider).deleteCoupon(coupon.id);
-                  },
-                  style: TextButton.styleFrom(foregroundColor: Colors.red),
-                  child: const Text('Eliminar'),
+                Flexible(
+                  child: TextButton(
+                    onPressed: () {
+                      ref.read(couponActionsProvider).deleteCoupon(coupon.id);
+                    },
+                    style: TextButton.styleFrom(foregroundColor: Colors.red),
+                    child: const Text('Eliminar'),
+                  ),
                 ),
               ],
             ),
@@ -457,6 +465,8 @@ class _StatCard extends StatelessWidget {
             label,
             style: AppTextStyles.bodySmall,
             textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),

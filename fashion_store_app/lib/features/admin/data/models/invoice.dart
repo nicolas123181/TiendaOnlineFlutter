@@ -64,10 +64,13 @@ class Invoice {
   });
 
   factory Invoice.fromJson(Map<String, dynamic> json) {
+    // Helper seguro: acepta int, double, o num de Supabase
+    int safeInt(dynamic v) => (v as num?)?.toInt() ?? 0;
+
     return Invoice(
-      id: json['id'] as int,
+      id: (json['id'] as num).toInt(),
       invoiceNumber: json['invoice_number'] as String? ?? 'SIN-NÚMERO',
-      orderId: json['order_id'] as int,
+      orderId: (json['order_id'] as num).toInt(),
       customerName: json['customer_name'] as String? ?? 'Sin nombre',
       customerEmail: json['customer_email'] as String? ?? 'Sin email',
       customerAddress: json['customer_address'] as String?,
@@ -79,17 +82,19 @@ class Invoice {
       companyNif: json['company_nif'] as String?,
       companyEmail: json['company_email'] as String?,
       companyPhone: json['company_phone'] as String?,
-      subtotal: ((json['subtotal'] as int?) ?? 0) / 100.0,
-      shippingCost: ((json['shipping_cost'] as int?) ?? 0) / 100.0,
-      discount: ((json['discount'] as int?) ?? 0) / 100.0,
+      subtotal: safeInt(json['subtotal']) / 100.0,
+      shippingCost: safeInt(json['shipping_cost']) / 100.0,
+      discount: safeInt(json['discount']) / 100.0,
       taxRate: (json['tax_rate'] as num?)?.toDouble() ?? 21.0,
-      taxAmount: ((json['tax_amount'] as int?) ?? 0) / 100.0,
-      total: ((json['total'] as int?) ?? 0) / 100.0,
+      taxAmount: safeInt(json['tax_amount']) / 100.0,
+      total: safeInt(json['total']) / 100.0,
       paymentMethod: json['payment_method'] as String?,
       paymentStatus: json['payment_status'] as String?,
       issueDate: json['issue_date'] != null
           ? DateTime.parse(json['issue_date'] as String)
-          : DateTime.now(),
+          : (json['created_at'] != null
+                ? DateTime.parse(json['created_at'] as String)
+                : DateTime.now()),
       dueDate: json['due_date'] != null
           ? DateTime.parse(json['due_date'] as String)
           : null,

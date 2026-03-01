@@ -1,12 +1,19 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../../config/constants/app_constants.dart';
 import '../../../../config/theme/app_colors.dart';
 import '../../../../config/theme/app_text_styles.dart';
+import '../../../../shared/services/supabase_service.dart';
+import '../../../returns/data/models/return_model.dart';
+import '../../../returns/presentation/screens/return_screens.dart';
 import '../providers/user_orders_provider.dart';
 
 /// Pantalla de detalle del pedido
@@ -57,6 +64,12 @@ class _OrderDetailContent extends StatelessWidget {
 
   Color _getStatusColor() {
     switch (order.status) {
+      case 'refunded':
+        return AppColors.success;
+      case 'return_pending':
+      case 'return_in_transit':
+      case 'return_received':
+        return AppColors.warning;
       case 'delivered':
         return AppColors.success;
       case 'shipped':
@@ -88,8 +101,7 @@ class _OrderDetailContent extends StatelessWidget {
           ],
 
           // Factura
-          if (order.status != 'pending' && order.status != 'cancelled')
-            _InvoiceCard(order: order),
+          if (order.status != 'pending') _InvoiceCard(order: order),
 
           // Productos
           _ProductsCard(items: order.items),
@@ -101,6 +113,20 @@ class _OrderDetailContent extends StatelessWidget {
 
           // Resumen del pedido
           _SummaryCard(order: order),
+
+          // Cancelar pedido (solo si está en 'paid')
+          if (order.status == 'paid') ...[
+            const SizedBox(height: 16),
+            _CancelOrderCard(order: order),
+          ],
+
+          // Solicitar devolución (solo si está en 'delivered')
+          if (order.status == 'delivered') ...[
+            const SizedBox(height: 16),
+            _RequestReturnCard(order: order),
+          ],
+
+          const SizedBox(height: 24),
         ],
       ),
     );
@@ -188,6 +214,41 @@ class _StatusTimeline extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dividerColor = Theme.of(context).dividerColor;
+
+    if (status == 'refunded') {
+      return Row(
+        children: [
+          for (int i = 0; i < 5; i++) ...[
+            _TimelineStep(
+              isCompleted: true,
+              isCurrent: i == 4,
+              isCancelled: false,
+            ),
+            if (i < 4)
+              Expanded(child: Container(height: 2, color: AppColors.success)),
+          ],
+        ],
+      );
+    }
+
+    if (status == 'return_pending' ||
+        status == 'return_in_transit' ||
+        status == 'return_received') {
+      return Row(
+        children: [
+          for (int i = 0; i < 5; i++) ...[
+            _TimelineStep(
+              isCompleted: i <= 4,
+              isCurrent: i == 4,
+              isCancelled: false,
+            ),
+            if (i < 4)
+              Expanded(child: Container(height: 2, color: AppColors.success)),
+          ],
+        ],
+      );
+    }
+
     final statuses = [
       'pending',
       'paid',
@@ -325,25 +386,50 @@ class _TrackingCard extends StatelessWidget {
                 ),
               ],
             ),
-            if (order.carrier?.getTrackingUrl(order.trackingNumber) !=
-                null) ...[
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: () async {
-                    final url = order.carrier!.getTrackingUrl(
-                      order.trackingNumber,
-                    )!;
-                    if (await canLaunchUrl(Uri.parse(url))) {
-                      await launchUrl(Uri.parse(url));
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () async {
+                  final trackingUrl = order.carrier?.getTrackingUrl(
+                    order.trackingNumber,
+                  );
+                  if (trackingUrl != null) {
+                    final uri = Uri.parse(trackingUrl);
+                    try {
+                      await launchUrl(
+                        uri,
+                        mode: LaunchMode.externalApplication,
+                      );
+                    } catch (_) {
+                      await launchUrl(uri);
                     }
-                  },
-                  icon: const Icon(Icons.open_in_new),
-                  label: const Text('Seguir envío'),
+                  } else {
+                    // Fallback: buscar por carrier genéricos
+                    final query = Uri.encodeComponent(
+                      order.trackingNumber ?? '',
+                    );
+                    final fallbackUrl =
+                        'https://www.google.com/search?q=seguimiento+envio+$query';
+                    final uri = Uri.parse(fallbackUrl);
+                    try {
+                      await launchUrl(
+                        uri,
+                        mode: LaunchMode.externalApplication,
+                      );
+                    } catch (_) {
+                      await launchUrl(uri);
+                    }
+                  }
+                },
+                icon: const Icon(Icons.open_in_new),
+                label: Text(
+                  order.carrier != null
+                      ? 'Seguir envío en ${order.carrier!.name}'
+                      : 'Seguir envío',
                 ),
               ),
-            ],
+            ),
           ],
         ),
       ),
@@ -528,11 +614,91 @@ class _SummaryRow extends StatelessWidget {
   }
 }
 
-/// Card de factura
-class _InvoiceCard extends StatelessWidget {
+/// Card de factura — descarga directa del PDF sin previsualización
+class _InvoiceCard extends ConsumerStatefulWidget {
   final UserOrder order;
 
   const _InvoiceCard({required this.order});
+
+  @override
+  ConsumerState<_InvoiceCard> createState() => _InvoiceCardState();
+}
+
+class _InvoiceCardState extends ConsumerState<_InvoiceCard> {
+  bool _loading = false;
+
+  bool get _isCancelledOrRefunded {
+    final s = widget.order.status;
+    return s == 'cancelled' || s == 'refunded' || s == 'return_received';
+  }
+
+  Future<void> _downloadInvoicePdf() async {
+    setState(() => _loading = true);
+    try {
+      final supabase = ref.read(supabaseClientProvider);
+      final orderId = widget.order.id;
+
+      // Buscar todas las facturas de este pedido
+      final allInvoices = await supabase
+          .from('invoices')
+          .select('id, type, total')
+          .eq('order_id', orderId)
+          .order('created_at', ascending: false);
+
+      final invoices = List<Map<String, dynamic>>.from(allInvoices);
+
+      Map<String, dynamic>? selected;
+
+      if (_isCancelledOrRefunded) {
+        // Buscar factura rectificativa (credit_note o total negativo)
+        for (final inv in invoices) {
+          final t = inv['type'] as String?;
+          final total = (inv['total'] as num?)?.toInt() ?? 0;
+          if (t == 'credit_note' || total < 0) {
+            selected = inv;
+            break;
+          }
+        }
+        // Fallback: la más reciente
+        selected ??= invoices.isNotEmpty ? invoices.first : null;
+      } else {
+        // Buscar factura estándar (type != credit_note y total >= 0)
+        for (final inv in invoices) {
+          final t = inv['type'] as String?;
+          final total = (inv['total'] as num?)?.toInt() ?? 0;
+          if (t != 'credit_note' && total >= 0) {
+            selected = inv;
+            break;
+          }
+        }
+        // Fallback: la más reciente
+        selected ??= invoices.isNotEmpty ? invoices.first : null;
+      }
+
+      if (selected != null) {
+        final invoiceId = (selected['id'] as num).toInt();
+        final url =
+            '${AppConstants.webApiBaseUrl}/api/invoice/$invoiceId/pdf?download=true';
+        final uri = Uri.parse(url);
+        try {
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+        } catch (_) {
+          await launchUrl(uri);
+        }
+      } else {
+        // No existe aún → abrir pantalla que la crea
+        if (mounted) context.push('/invoice/$orderId');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error al obtener factura: $e')));
+      }
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -565,9 +731,16 @@ class _InvoiceCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Tu Factura', style: AppTextStyles.labelLarge),
                       Text(
-                        'Factura disponible para este pedido',
+                        _isCancelledOrRefunded
+                            ? 'Factura Rectificativa'
+                            : 'Tu Factura',
+                        style: AppTextStyles.labelLarge,
+                      ),
+                      Text(
+                        _isCancelledOrRefunded
+                            ? 'Nota de crédito disponible'
+                            : 'Factura disponible para este pedido',
                         style: textTheme.labelSmall?.copyWith(
                           color: colorScheme.onSurface.withValues(alpha: 0.7),
                         ),
@@ -579,8 +752,9 @@ class _InvoiceCard extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'Puedes ver y descargar tu factura para este pedido. '
-              'La factura se genera automáticamente después de que el pago sea confirmado.',
+              _isCancelledOrRefunded
+                  ? 'Descarga la factura rectificativa (nota de crédito) de este pedido.'
+                  : 'Pulsa el botón para descargar la factura de este pedido en formato PDF.',
               style: AppTextStyles.bodySmall.copyWith(
                 color: colorScheme.onSurface.withValues(alpha: 0.7),
               ),
@@ -589,12 +763,24 @@ class _InvoiceCard extends StatelessWidget {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed: () {
-                  // Navegar a pantalla de factura
-                  context.push('/invoice/${order.id}');
-                },
-                icon: const Icon(Icons.picture_as_pdf),
-                label: const Text('Ver Factura (PDF)'),
+                onPressed: _loading ? null : _downloadInvoicePdf,
+                icon: _loading
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Icon(Icons.picture_as_pdf),
+                label: Text(
+                  _loading
+                      ? 'Descargando...'
+                      : _isCancelledOrRefunded
+                      ? 'Descargar Nota de Crédito'
+                      : 'Descargar Factura',
+                ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: colorScheme.primary,
                   foregroundColor: colorScheme.onPrimary,
@@ -715,6 +901,394 @@ class _InfoRow extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Card para cancelar pedido (solo visible si status == 'paid')
+class _CancelOrderCard extends ConsumerStatefulWidget {
+  final UserOrder order;
+
+  const _CancelOrderCard({required this.order});
+
+  @override
+  ConsumerState<_CancelOrderCard> createState() => _CancelOrderCardState();
+}
+
+class _CancelOrderCardState extends ConsumerState<_CancelOrderCard> {
+  bool _isCancelling = false;
+
+  Future<void> _cancelOrder() async {
+    // Mostrar diálogo de confirmación
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Cancelar Pedido'),
+        content: const Text(
+          '¿Estás seguro de que deseas cancelar este pedido?\n\n'
+          'Recibirás el reembolso en tu método de pago original en 5-10 días hábiles.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('No, mantener'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.error,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Sí, cancelar'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _isCancelling = true);
+
+    try {
+      final supabase = ref.read(supabaseClientProvider);
+      final session = supabase.auth.currentSession;
+
+      final headers = <String, String>{'Content-Type': 'application/json'};
+      if (session?.accessToken != null) {
+        headers['Authorization'] = 'Bearer ${session!.accessToken}';
+      }
+
+      final response = await http.post(
+        Uri.parse('${AppConstants.webApiBaseUrl}/api/orders/cancel'),
+        headers: headers,
+        body: jsonEncode({'orderId': widget.order.id}),
+      );
+
+      if (!mounted) return;
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success'] == true) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Pedido cancelado correctamente. Recibirás tu reembolso pronto.',
+              ),
+              backgroundColor: AppColors.success,
+            ),
+          );
+          // Invalidar cache y volver atrás
+          ref.invalidate(userOrdersProvider);
+          ref.invalidate(orderByIdProvider(widget.order.id));
+          return;
+        }
+      }
+
+      // Error
+      final body = response.body.isNotEmpty ? jsonDecode(response.body) : null;
+      final errorMsg = body is Map && body['error'] is String
+          ? body['error'] as String
+          : 'Error al cancelar el pedido';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(errorMsg), backgroundColor: AppColors.error),
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${e.toString()}'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isCancelling = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 0,
+      color: AppColors.error.withValues(alpha: 0.05),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: AppColors.error.withValues(alpha: 0.2)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.error.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(
+                    Icons.cancel_outlined,
+                    color: AppColors.error,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '¿Deseas cancelar el pedido?',
+                        style: AppTextStyles.labelLarge,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Tu pedido aún no ha sido enviado. Puedes cancelarlo y recibirás el reembolso en 5-10 días hábiles.',
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: _isCancelling ? null : _cancelOrder,
+                icon: _isCancelling
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Icon(Icons.delete_outline),
+                label: Text(
+                  _isCancelling ? 'Cancelando...' : 'Cancelar Pedido',
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.error,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Card para solicitar devolución (solo visible si status == 'delivered')
+class _RequestReturnCard extends StatelessWidget {
+  final UserOrder order;
+
+  const _RequestReturnCard({required this.order});
+
+  @override
+  Widget build(BuildContext context) {
+    // Comprobar si ya existe una devolución
+    return Consumer(
+      builder: (context, ref, _) {
+        final existingReturn = ref.watch(returnByOrderProvider(order.id));
+
+        return existingReturn.when(
+          data: (returnReq) {
+            // Si ya hay una devolución activa, mostrar su estado
+            if (returnReq != null) {
+              return _ExistingReturnCard(returnRequest: returnReq);
+            }
+            // Si no, mostrar botón para solicitar
+            return _NewReturnCard(orderId: order.id);
+          },
+          loading: () => const SizedBox.shrink(),
+          error: (_, __) => _NewReturnCard(orderId: order.id),
+        );
+      },
+    );
+  }
+}
+
+class _NewReturnCard extends StatelessWidget {
+  final int orderId;
+
+  const _NewReturnCard({required this.orderId});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 0,
+      color: AppColors.warning.withValues(alpha: 0.05),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: AppColors.warning.withValues(alpha: 0.2)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.warning.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(
+                    Icons.assignment_return,
+                    color: AppColors.warning,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '¿Necesitas devolver algo?',
+                        style: AppTextStyles.labelLarge,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Tienes 30 días desde la entrega para solicitar una devolución.',
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () => context.push('/return/$orderId'),
+                icon: const Icon(Icons.assignment_return),
+                label: const Text('Solicitar Devolución'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.warning,
+                  side: const BorderSide(color: AppColors.warning),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ExistingReturnCard extends StatelessWidget {
+  final ReturnRequest returnRequest;
+
+  const _ExistingReturnCard({required this.returnRequest});
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    Color statusColor;
+    String statusText;
+    IconData statusIcon;
+
+    switch (returnRequest.status) {
+      case 'pending':
+      case 'in_transit':
+        statusColor = AppColors.warning;
+        statusText = 'Devolución en proceso';
+        statusIcon = Icons.hourglass_empty;
+        break;
+      case 'received':
+        statusColor = AppColors.info;
+        statusText = 'Devolución recibida - En revisión';
+        statusIcon = Icons.inbox;
+        break;
+      case 'refunded':
+        statusColor = AppColors.success;
+        statusText = 'Reembolso procesado';
+        statusIcon = Icons.check_circle;
+        break;
+      case 'rejected':
+        statusColor = AppColors.error;
+        statusText = 'Devolución rechazada';
+        statusIcon = Icons.cancel;
+        break;
+      default:
+        statusColor = AppColors.textSecondary;
+        statusText = returnRequest.status;
+        statusIcon = Icons.info;
+    }
+
+    return Card(
+      elevation: 0,
+      color: statusColor.withValues(alpha: 0.05),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: statusColor.withValues(alpha: 0.2)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: statusColor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(statusIcon, color: statusColor),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(statusText, style: AppTextStyles.labelLarge),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Ref: ${returnRequest.returnNumber}',
+                    style: textTheme.labelSmall?.copyWith(
+                      color: AppColors.textSecondary,
+                      fontFamily: 'monospace',
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: statusColor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                returnRequest.statusLabel,
+                style: AppTextStyles.caption.copyWith(
+                  color: statusColor,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

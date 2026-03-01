@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -147,48 +149,243 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
     });
   }
 
-  void _showSearchSheet(BuildContext context) {
-    showModalBottomSheet(
+  Future<void> _showSearchSheet(BuildContext context) async {
+    final currentFilter = ref.read(currentFilterProvider);
+    final currentQuery = currentFilter.searchQuery ?? '';
+    if (_searchController.text != currentQuery) {
+      _searchController.text = currentQuery;
+      _searchController.selection = TextSelection.fromPosition(
+        TextPosition(offset: _searchController.text.length),
+      );
+    }
+
+    Timer? debounceTimer;
+
+    await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
-        ),
-        decoration: const BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: _searchController,
-                autofocus: true,
-                decoration: InputDecoration(
-                  hintText: 'Buscar productos...',
-                  prefixIcon: const Icon(Icons.search),
-                  suffixIcon: IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () {
-                      _searchController.clear();
-                      Navigator.pop(context);
-                    },
+      builder: (sheetContext) {
+        String query = _searchController.text;
+        String debouncedQuery = _searchController.text;
+
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Consumer(
+              builder: (context, ref, _) {
+                final normalizedQuery = query.trim();
+                final normalizedDebouncedQuery = debouncedQuery.trim();
+                final showSuggestions = normalizedQuery.length >= 2;
+                final isDebouncing =
+                    showSuggestions &&
+                    normalizedQuery != normalizedDebouncedQuery;
+
+                return Container(
+                  constraints: BoxConstraints(
+                    maxHeight: MediaQuery.of(context).size.height * 0.75,
                   ),
-                ),
-                onSubmitted: (query) {
-                  Navigator.pop(context);
-                  // TODO: Implementar búsqueda
-                },
-              ),
-            ],
-          ),
-        ),
-      ),
+                  padding: EdgeInsets.only(
+                    bottom: MediaQuery.of(context).viewInsets.bottom,
+                  ),
+                  decoration: const BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(20),
+                    ),
+                  ),
+                  child: SafeArea(
+                    top: false,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          TextField(
+                            controller: _searchController,
+                            autofocus: true,
+                            textInputAction: TextInputAction.search,
+                            decoration: InputDecoration(
+                              hintText: 'Buscar productos...',
+                              prefixIcon: const Icon(Icons.search),
+                              suffixIcon: IconButton(
+                                icon: const Icon(Icons.close),
+                                onPressed: () {
+                                  _searchController.clear();
+                                  final filter = ref.read(
+                                    currentFilterProvider,
+                                  );
+                                  ref
+                                      .read(currentFilterProvider.notifier)
+                                      .updateFilter(
+                                        filter.copyWith(
+                                          searchQuery: null,
+                                          page: 1,
+                                        ),
+                                      );
+                                  Navigator.pop(sheetContext);
+                                },
+                              ),
+                            ),
+                            onChanged: (value) {
+                              setModalState(() {
+                                query = value;
+                              });
+
+                              debounceTimer?.cancel();
+                              debounceTimer = Timer(
+                                const Duration(milliseconds: 300),
+                                () {
+                                  setModalState(() {
+                                    debouncedQuery = value;
+                                  });
+                                },
+                              );
+                            },
+                            onSubmitted: (value) {
+                              debounceTimer?.cancel();
+                              final normalized = value.trim();
+                              final filter = ref.read(currentFilterProvider);
+                              ref
+                                  .read(currentFilterProvider.notifier)
+                                  .updateFilter(
+                                    filter.copyWith(
+                                      searchQuery: normalized.isEmpty
+                                          ? null
+                                          : normalized,
+                                      page: 1,
+                                    ),
+                                  );
+                              Navigator.pop(sheetContext);
+                            },
+                          ),
+                          const SizedBox(height: 12),
+                          if (showSuggestions)
+                            Flexible(
+                              child: isDebouncing
+                                  ? const Padding(
+                                      padding: EdgeInsets.symmetric(
+                                        vertical: 16,
+                                      ),
+                                      child: Center(
+                                        child: CircularProgressIndicator(),
+                                      ),
+                                    )
+                                  : ref
+                                        .watch(
+                                          searchProductsProvider(
+                                            normalizedDebouncedQuery,
+                                          ),
+                                        )
+                                        .when(
+                                          data: (products) {
+                                            final suggestions = products
+                                                .take(8)
+                                                .toList();
+                                            if (suggestions.isEmpty) {
+                                              return const Padding(
+                                                padding: EdgeInsets.symmetric(
+                                                  vertical: 16,
+                                                ),
+                                                child: Text(
+                                                  'Sin resultados para esa búsqueda',
+                                                ),
+                                              );
+                                            }
+
+                                            return ListView.separated(
+                                              shrinkWrap: true,
+                                              itemCount: suggestions.length,
+                                              separatorBuilder: (_, __) =>
+                                                  const Divider(height: 1),
+                                              itemBuilder: (context, index) {
+                                                final product =
+                                                    suggestions[index];
+                                                return ListTile(
+                                                  dense: true,
+                                                  leading: const Icon(
+                                                    Icons.search,
+                                                    size: 18,
+                                                  ),
+                                                  title: Text(
+                                                    product.name,
+                                                    maxLines: 1,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                  ),
+                                                  subtitle: Text(
+                                                    product.category?.name ??
+                                                        'Sin categoría',
+                                                    maxLines: 1,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                  ),
+                                                  onTap: () {
+                                                    debounceTimer?.cancel();
+                                                    _searchController.text =
+                                                        product.name;
+                                                    final filter = ref.read(
+                                                      currentFilterProvider,
+                                                    );
+                                                    ref
+                                                        .read(
+                                                          currentFilterProvider
+                                                              .notifier,
+                                                        )
+                                                        .updateFilter(
+                                                          filter.copyWith(
+                                                            searchQuery:
+                                                                product.name,
+                                                            page: 1,
+                                                          ),
+                                                        );
+                                                    Navigator.pop(sheetContext);
+                                                  },
+                                                );
+                                              },
+                                            );
+                                          },
+                                          loading: () => const Padding(
+                                            padding: EdgeInsets.symmetric(
+                                              vertical: 16,
+                                            ),
+                                            child: Center(
+                                              child:
+                                                  CircularProgressIndicator(),
+                                            ),
+                                          ),
+                                          error: (_, __) => const Padding(
+                                            padding: EdgeInsets.symmetric(
+                                              vertical: 16,
+                                            ),
+                                            child: Text(
+                                              'No se pudieron cargar sugerencias',
+                                            ),
+                                          ),
+                                        ),
+                            )
+                          else
+                            const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 8),
+                              child: Align(
+                                alignment: Alignment.centerLeft,
+                                child: Text(
+                                  'Escribe al menos 2 caracteres para sugerencias',
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            );
+          },
+        );
+      },
     );
+
+    debounceTimer?.cancel();
   }
 
   void _showFilterSheet(
@@ -214,192 +411,236 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
                 final categoriesAsync = ref.watch(categoriesProvider);
 
                 return Container(
-                  height: MediaQuery.of(context).size.height * 0.7,
+                  constraints: BoxConstraints(
+                    maxHeight: MediaQuery.of(context).size.height * 0.85,
+                  ),
                   decoration: const BoxDecoration(
                     color: AppColors.surface,
                     borderRadius: BorderRadius.vertical(
                       top: Radius.circular(20),
                     ),
                   ),
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  child: SafeArea(
+                    top: false,
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Filtros', style: AppTextStyles.h4),
-                          TextButton(
-                            onPressed: () {
-                              setState(() {
-                                tempFilter = ProductsFilter(
-                                  categorySlug: widget.categorySlug,
-                                );
-                              });
-                              ref
-                                  .read(currentFilterProvider.notifier)
-                                  .updateFilter(tempFilter);
-                              Navigator.pop(context);
-                            },
-                            child: const Text('Limpiar'),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 24),
-                      Text('Ordenar por', style: AppTextStyles.labelLarge),
-                      const SizedBox(height: 12),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: [
-                          _FilterChip(
-                            label: 'Más recientes',
-                            selected: isSortSelected('created_at', false),
-                            onSelected: (value) {
-                              if (!value) return;
-                              setState(() {
-                                tempFilter = tempFilter.copyWith(
-                                  sortBy: 'created_at',
-                                  ascending: false,
-                                );
-                              });
-                            },
-                          ),
-                          _FilterChip(
-                            label: 'Precio: menor a mayor',
-                            selected: isSortSelected('price', true),
-                            onSelected: (value) {
-                              if (!value) return;
-                              setState(() {
-                                tempFilter = tempFilter.copyWith(
-                                  sortBy: 'price',
-                                  ascending: true,
-                                );
-                              });
-                            },
-                          ),
-                          _FilterChip(
-                            label: 'Precio: mayor a menor',
-                            selected: isSortSelected('price', false),
-                            onSelected: (value) {
-                              if (!value) return;
-                              setState(() {
-                                tempFilter = tempFilter.copyWith(
-                                  sortBy: 'price',
-                                  ascending: false,
-                                );
-                              });
-                            },
-                          ),
-                          _FilterChip(
-                            label: 'Más vendidos',
-                            selected: false,
-                            onSelected: (_) {},
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 24),
-                      Text('Filtrar', style: AppTextStyles.labelLarge),
-                      const SizedBox(height: 12),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: [
-                          _FilterChip(
-                            label: 'En oferta',
-                            selected: tempFilter.onlyOnSale == true,
-                            onSelected: (value) {
-                              setState(() {
-                                tempFilter = tempFilter.copyWith(
-                                  onlyOnSale: value ? true : null,
-                                );
-                              });
-                            },
-                          ),
-                          _FilterChip(
-                            label: 'En stock',
-                            selected: tempFilter.onlyInStock == true,
-                            onSelected: (value) {
-                              setState(() {
-                                tempFilter = tempFilter.copyWith(
-                                  onlyInStock: value ? true : null,
-                                );
-                              });
-                            },
-                          ),
-                          _FilterChip(
-                            label: 'Destacados',
-                            selected: tempFilter.onlyFeatured == true,
-                            onSelected: (value) {
-                              setState(() {
-                                tempFilter = tempFilter.copyWith(
-                                  onlyFeatured: value ? true : null,
-                                );
-                              });
-                            },
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 24),
-                      Text('Categorías', style: AppTextStyles.labelLarge),
-                      const SizedBox(height: 12),
-                      categoriesAsync.when(
-                        data: (categories) => Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: [
-                            _FilterChip(
-                              label: 'Todas',
-                              selected: tempFilter.categorySlug == null,
-                              onSelected: (value) {
-                                if (!value) return;
-                                setState(() {
-                                  tempFilter = tempFilter.copyWith(
-                                    categorySlug: null,
-                                  );
-                                });
-                              },
-                            ),
-                            ...categories.map(
-                              (category) => _FilterChip(
-                                label: category.name,
-                                selected:
-                                    tempFilter.categorySlug == category.slug,
-                                onSelected: (value) {
-                                  if (!value) return;
-                                  setState(() {
-                                    tempFilter = tempFilter.copyWith(
-                                      categorySlug: category.slug,
-                                    );
-                                  });
-                                },
+                          Expanded(
+                            child: SingleChildScrollView(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text('Filtros', style: AppTextStyles.h4),
+                                      TextButton(
+                                        onPressed: () {
+                                          setState(() {
+                                            tempFilter = ProductsFilter(
+                                              categorySlug: widget.categorySlug,
+                                            );
+                                          });
+                                          ref
+                                              .read(
+                                                currentFilterProvider.notifier,
+                                              )
+                                              .updateFilter(tempFilter);
+                                          Navigator.pop(context);
+                                        },
+                                        child: const Text('Limpiar'),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 24),
+                                  Text(
+                                    'Ordenar por',
+                                    style: AppTextStyles.labelLarge,
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Wrap(
+                                    spacing: 8,
+                                    runSpacing: 8,
+                                    children: [
+                                      _FilterChip(
+                                        label: 'Más recientes',
+                                        selected: isSortSelected(
+                                          'created_at',
+                                          false,
+                                        ),
+                                        onSelected: (value) {
+                                          if (!value) return;
+                                          setState(() {
+                                            tempFilter = tempFilter.copyWith(
+                                              sortBy: 'created_at',
+                                              ascending: false,
+                                            );
+                                          });
+                                        },
+                                      ),
+                                      _FilterChip(
+                                        label: 'Precio: menor a mayor',
+                                        selected: isSortSelected('price', true),
+                                        onSelected: (value) {
+                                          if (!value) return;
+                                          setState(() {
+                                            tempFilter = tempFilter.copyWith(
+                                              sortBy: 'price',
+                                              ascending: true,
+                                            );
+                                          });
+                                        },
+                                      ),
+                                      _FilterChip(
+                                        label: 'Precio: mayor a menor',
+                                        selected: isSortSelected(
+                                          'price',
+                                          false,
+                                        ),
+                                        onSelected: (value) {
+                                          if (!value) return;
+                                          setState(() {
+                                            tempFilter = tempFilter.copyWith(
+                                              sortBy: 'price',
+                                              ascending: false,
+                                            );
+                                          });
+                                        },
+                                      ),
+                                      _FilterChip(
+                                        label: 'Más vendidos',
+                                        selected: false,
+                                        onSelected: (_) {},
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 24),
+                                  Text(
+                                    'Filtrar',
+                                    style: AppTextStyles.labelLarge,
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Wrap(
+                                    spacing: 8,
+                                    runSpacing: 8,
+                                    children: [
+                                      _FilterChip(
+                                        label: 'En oferta',
+                                        selected: tempFilter.onlyOnSale == true,
+                                        onSelected: (value) {
+                                          setState(() {
+                                            tempFilter = tempFilter.copyWith(
+                                              onlyOnSale: value ? true : null,
+                                            );
+                                          });
+                                        },
+                                      ),
+                                      _FilterChip(
+                                        label: 'En stock',
+                                        selected:
+                                            tempFilter.onlyInStock == true,
+                                        onSelected: (value) {
+                                          setState(() {
+                                            tempFilter = tempFilter.copyWith(
+                                              onlyInStock: value ? true : null,
+                                            );
+                                          });
+                                        },
+                                      ),
+                                      _FilterChip(
+                                        label: 'Destacados',
+                                        selected:
+                                            tempFilter.onlyFeatured == true,
+                                        onSelected: (value) {
+                                          setState(() {
+                                            tempFilter = tempFilter.copyWith(
+                                              onlyFeatured: value ? true : null,
+                                            );
+                                          });
+                                        },
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 24),
+                                  Text(
+                                    'Categorías',
+                                    style: AppTextStyles.labelLarge,
+                                  ),
+                                  const SizedBox(height: 12),
+                                  categoriesAsync.when(
+                                    data: (categories) => Wrap(
+                                      spacing: 8,
+                                      runSpacing: 8,
+                                      children: [
+                                        _FilterChip(
+                                          label: 'Todas',
+                                          selected:
+                                              tempFilter.categorySlug == null,
+                                          onSelected: (value) {
+                                            if (!value) return;
+                                            setState(() {
+                                              tempFilter = tempFilter.copyWith(
+                                                categorySlug: null,
+                                              );
+                                            });
+                                          },
+                                        ),
+                                        ...categories.map(
+                                          (category) => _FilterChip(
+                                            label: category.name,
+                                            selected:
+                                                tempFilter.categorySlug ==
+                                                category.slug,
+                                            onSelected: (value) {
+                                              if (!value) return;
+                                              setState(() {
+                                                tempFilter = tempFilter
+                                                    .copyWith(
+                                                      categorySlug:
+                                                          category.slug,
+                                                    );
+                                              });
+                                            },
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    loading: () => const Padding(
+                                      padding: EdgeInsets.symmetric(
+                                        vertical: 8,
+                                      ),
+                                      child: Center(
+                                        child: CircularProgressIndicator(),
+                                      ),
+                                    ),
+                                    error: (error, _) => Text(
+                                      'No se pudieron cargar las categorías',
+                                      style: AppTextStyles.bodySmall,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                          ],
-                        ),
-                        loading: () => const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 8),
-                          child: Center(child: CircularProgressIndicator()),
-                        ),
-                        error: (error, _) => Text(
-                          'No se pudieron cargar las categorías',
-                          style: AppTextStyles.bodySmall,
-                        ),
+                          ),
+                          const SizedBox(height: 12),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: () {
+                                ref
+                                    .read(currentFilterProvider.notifier)
+                                    .updateFilter(tempFilter);
+                                Navigator.pop(context);
+                              },
+                              child: const Text('APLICAR FILTROS'),
+                            ),
+                          ),
+                        ],
                       ),
-                      const Spacer(),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: () {
-                            ref
-                                .read(currentFilterProvider.notifier)
-                                .updateFilter(tempFilter);
-                            Navigator.pop(context);
-                          },
-                          child: const Text('APLICAR FILTROS'),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 );
               },

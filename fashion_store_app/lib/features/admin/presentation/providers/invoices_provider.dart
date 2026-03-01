@@ -1,5 +1,6 @@
 // Provider simplificado para gestión de facturas
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../shared/services/supabase_service.dart';
@@ -14,7 +15,15 @@ final invoicesProvider = FutureProvider<List<Invoice>>((ref) async {
       .select('*')
       .order('created_at', ascending: false);
 
-  return (response as List).map((json) => Invoice.fromJson(json)).toList();
+  final invoices = <Invoice>[];
+  for (final json in (response as List)) {
+    try {
+      invoices.add(Invoice.fromJson(json));
+    } catch (e) {
+      debugPrint('⚠️ Error parseando factura id=${json['id']}: $e');
+    }
+  }
+  return invoices;
 });
 
 /// Provider para obtener factura por ID de pedido

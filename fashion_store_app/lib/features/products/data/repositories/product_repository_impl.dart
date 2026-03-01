@@ -13,6 +13,49 @@ class ProductRepositoryImpl implements ProductRepository {
 
   ProductRepositoryImpl(this._client);
 
+  String _normalizeSearchText(String input) {
+    final lower = input.toLowerCase().trim();
+    return lower
+        .replaceAll('á', 'a')
+        .replaceAll('à', 'a')
+        .replaceAll('ä', 'a')
+        .replaceAll('â', 'a')
+        .replaceAll('é', 'e')
+        .replaceAll('è', 'e')
+        .replaceAll('ë', 'e')
+        .replaceAll('ê', 'e')
+        .replaceAll('í', 'i')
+        .replaceAll('ì', 'i')
+        .replaceAll('ï', 'i')
+        .replaceAll('î', 'i')
+        .replaceAll('ó', 'o')
+        .replaceAll('ò', 'o')
+        .replaceAll('ö', 'o')
+        .replaceAll('ô', 'o')
+        .replaceAll('ú', 'u')
+        .replaceAll('ù', 'u')
+        .replaceAll('ü', 'u')
+        .replaceAll('û', 'u')
+        .replaceAll('ñ', 'n')
+        .replaceAll(RegExp(r'[^a-z0-9\s€]'), ' ')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
+  }
+
+  bool _matchesSmartSearch(ProductModel product, List<String> tokens) {
+    if (tokens.isEmpty) return true;
+
+    final categoryName = product.category?.name ?? '';
+    final priceText = (product.currentPrice / 100).toStringAsFixed(2);
+    final haystack = _normalizeSearchText(
+      '${product.name} ${product.slug} '
+      '${product.description ?? ''} ${product.shortDescription ?? ''} '
+      '$categoryName $priceText ${priceText.replaceAll('.', ',')}',
+    );
+
+    return tokens.every(haystack.contains);
+  }
+
   @override
   FutureEither<List<ProductModel>> getProducts({
     int page = 1,
@@ -26,8 +69,10 @@ class ProductRepositoryImpl implements ProductRepository {
     bool ascending = false,
   }) async {
     try {
-      final from = (page - 1) * limit;
-      final to = from + limit - 1;
+      final normalizedSearch = searchQuery?.trim();
+      final hasSearch = normalizedSearch != null && normalizedSearch.isNotEmpty;
+      final from = hasSearch ? 0 : (page - 1) * limit;
+      final to = hasSearch ? 199 : (from + limit - 1);
 
       var query = _client.from('products').select('''
         *,
@@ -45,8 +90,15 @@ class ProductRepositoryImpl implements ProductRepository {
         query = query.eq('category_id', categoryResult['id']);
       }
 
-      if (searchQuery != null && searchQuery.isNotEmpty) {
-        query = query.ilike('name', '%$searchQuery%');
+      if (hasSearch) {
+        final safeSearch = normalizedSearch;
+        final dbQuery = safeSearch
+            .replaceAll(',', ' ')
+            .replaceAll('%', '')
+            .replaceAll('*', '');
+        query = query.or(
+          'name.ilike.%$dbQuery%,description.ilike.%$dbQuery%,slug.ilike.%$dbQuery%',
+        );
       }
 
       if (onlyOnSale == true) {
@@ -66,9 +118,20 @@ class ProductRepositoryImpl implements ProductRepository {
           .order(sortBy, ascending: ascending)
           .range(from, to);
 
-      final products = (response as List)
+      var products = (response as List)
           .map((json) => ProductModel.fromJson(json))
           .toList();
+
+      if (hasSearch) {
+        final tokens = _normalizeSearchText(
+          normalizedSearch,
+        ).split(' ').where((token) => token.isNotEmpty).toList();
+
+        products = products
+            .where((product) => _matchesSmartSearch(product, tokens))
+            .take(limit)
+            .toList();
+      }
 
       return right(products);
     } on PostgrestException catch (e) {

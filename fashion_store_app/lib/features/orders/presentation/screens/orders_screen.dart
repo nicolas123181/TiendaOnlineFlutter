@@ -66,6 +66,12 @@ class _OrderCard extends StatelessWidget {
 
   Color _getStatusColor() {
     switch (order.status) {
+      case 'refunded':
+        return AppColors.success;
+      case 'return_pending':
+      case 'return_in_transit':
+      case 'return_received':
+        return AppColors.warning;
       case 'delivered':
         return AppColors.success;
       case 'shipped':
@@ -81,6 +87,12 @@ class _OrderCard extends StatelessWidget {
 
   IconData _getStatusIcon() {
     switch (order.status) {
+      case 'refunded':
+        return Icons.currency_exchange;
+      case 'return_pending':
+      case 'return_in_transit':
+      case 'return_received':
+        return Icons.assignment_return;
       case 'delivered':
         return Icons.check_circle;
       case 'shipped':

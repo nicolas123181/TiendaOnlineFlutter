@@ -114,7 +114,7 @@ final adminStatsProvider = FutureProvider<AdminStats>((ref) async {
     );
   }
 
-  // ── Returns / Devoluciones ─────────────────────────────────────
+  // ── Returns / Devoluciones (último mes para KPIs) ──────────────
   final returnsResponse = await supabase
       .from('returns')
       .select('id, status, refund_amount, created_at')
@@ -125,6 +125,12 @@ final adminStatsProvider = FutureProvider<AdminStats>((ref) async {
 
   final returnsList = returnsResponse as List;
 
+  // ── Returns / Devoluciones (totales para gráfico por estado) ───
+  final returnsAllResponse = await supabase
+      .from('returns')
+      .select('id, status');
+  final returnsAllList = returnsAllResponse as List;
+
   final pendingReturns = returnsList
       .where((r) => r['status'] == 'pending' || r['status'] == 'in_transit')
       .length;
@@ -134,7 +140,7 @@ final adminStatsProvider = FutureProvider<AdminStats>((ref) async {
       .fold<double>(0.0, (sum, r) => sum + ((r['refund_amount'] ?? 0) / 100.0));
 
   final returnsByStatus = <String, int>{};
-  for (final r in returnsList) {
+  for (final r in returnsAllList) {
     final s = r['status'] as String? ?? 'other';
     returnsByStatus[s] = (returnsByStatus[s] ?? 0) + 1;
   }

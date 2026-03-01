@@ -114,58 +114,68 @@ class _DashboardContent extends StatelessWidget {
           // KPIs de Negocio
           Text('Métricas Clave', style: AppTextStyles.h3),
           const SizedBox(height: 16),
-          GridView.count(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            crossAxisCount: 2,
-            crossAxisSpacing: 16,
-            mainAxisSpacing: 16,
-            childAspectRatio: 1.3,
-            children: [
-              _KPICard(
-                icon: Icons.euro_symbol,
-                label: 'Ventas del Mes',
-                value: '${stats.monthlySales.toStringAsFixed(2)} €',
-                color: Colors.green,
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF10b981), Color(0xFF14b8a6)],
-                ),
-              ),
-              _KPICard(
-                icon: Icons.pending_actions,
-                label: 'Pedidos Pendientes',
-                value: '${stats.pendingOrders}',
-                color: Colors.orange,
-                gradient: const LinearGradient(
-                  colors: [Color(0xFFf59e0b), Color(0xFFf97316)],
-                ),
-              ),
-              _KPICard(
-                icon: Icons.star,
-                label: 'Producto Top',
-                value: stats.topProduct.length > 15
-                    ? '${stats.topProduct.substring(0, 15)}...'
-                    : stats.topProduct,
-                subtitle: '${stats.topProductSold} vendidos',
-                color: Colors.purple,
-                gradient: const LinearGradient(
-                  colors: [Color(0xFFa855f7), Color(0xFF8b5cf6)],
-                ),
-              ),
-              // 4º KPI — Devoluciones (igual que la web)
-              _KPICard(
-                icon: Icons.assignment_return,
-                label: 'Devoluciones',
-                value: '${stats.pendingReturns}',
-                subtitle: stats.monthlyRefunds > 0
-                    ? '-${stats.monthlyRefunds.toStringAsFixed(2)} €'
-                    : 'Pendientes',
-                color: Colors.red,
-                gradient: const LinearGradient(
-                  colors: [Color(0xFFf43f5e), Color(0xFFef4444)],
-                ),
-              ),
-            ],
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final width = constraints.maxWidth;
+              final cardWidth = (width - 16) / 2;
+              final cardHeight = cardWidth / 1.3;
+              const minCardHeight = 140.0;
+              return GridView.count(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                crossAxisCount: 2,
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 16,
+                childAspectRatio:
+                    cardWidth /
+                    (cardHeight < minCardHeight ? minCardHeight : cardHeight),
+                children: [
+                  _KPICard(
+                    icon: Icons.euro_symbol,
+                    label: 'Ventas del Mes',
+                    value: '${stats.monthlySales.toStringAsFixed(2)} €',
+                    color: Colors.green,
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF10b981), Color(0xFF14b8a6)],
+                    ),
+                  ),
+                  _KPICard(
+                    icon: Icons.pending_actions,
+                    label: 'Pedidos Pendientes',
+                    value: '${stats.pendingOrders}',
+                    color: Colors.orange,
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFf59e0b), Color(0xFFf97316)],
+                    ),
+                  ),
+                  _KPICard(
+                    icon: Icons.star,
+                    label: 'Producto Top',
+                    value: stats.topProduct.length > 15
+                        ? '${stats.topProduct.substring(0, 15)}...'
+                        : stats.topProduct,
+                    subtitle: '${stats.topProductSold} vendidos',
+                    color: Colors.purple,
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFa855f7), Color(0xFF8b5cf6)],
+                    ),
+                  ),
+                  // 4º KPI — Devoluciones (igual que la web)
+                  _KPICard(
+                    icon: Icons.assignment_return,
+                    label: 'Devoluciones',
+                    value: '${stats.pendingReturns}',
+                    subtitle: stats.monthlyRefunds > 0
+                        ? '-${stats.monthlyRefunds.toStringAsFixed(2)} €'
+                        : 'Pendientes',
+                    color: Colors.red,
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFf43f5e), Color(0xFFef4444)],
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
           const SizedBox(height: 24),
 
@@ -186,24 +196,13 @@ class _DashboardContent extends StatelessWidget {
               );
               return Column(
                 children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: _SalesVsReturnsChart(
-                          sales: chartData.sales,
-                          returns: chartData.returns,
-                          period: period,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: _ReturnsDonutChart(
-                          returnsByStatus: stats.returnsByStatus,
-                        ),
-                      ),
-                    ],
+                  _SalesVsReturnsChart(
+                    sales: chartData.sales,
+                    returns: chartData.returns,
+                    period: period,
                   ),
+                  const SizedBox(height: 16),
+                  _ReturnsDonutChart(returnsByStatus: stats.returnsByStatus),
                   const SizedBox(height: 16),
                   // Balance card
                   _BalanceSummaryCard(
@@ -232,39 +231,51 @@ class _DashboardContent extends StatelessWidget {
           // Estado del Inventario
           Text('Estado del Inventario', style: AppTextStyles.h3),
           const SizedBox(height: 16),
-          GridView.count(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            crossAxisCount: 2,
-            crossAxisSpacing: 16,
-            mainAxisSpacing: 16,
-            childAspectRatio: 1.5,
-            children: [
-              _InventoryCard(
-                icon: Icons.inventory_2,
-                label: 'Total Productos',
-                value: '${stats.totalProducts}',
-                color: Colors.blue,
-              ),
-              _InventoryCard(
-                icon: Icons.warehouse,
-                label: 'Stock Total',
-                value: '${stats.totalStock}',
-                color: Colors.green,
-              ),
-              _InventoryCard(
-                icon: Icons.warning_amber,
-                label: 'Stock Bajo',
-                value: '${stats.lowStockCount}',
-                color: Colors.orange,
-              ),
-              _InventoryCard(
-                icon: Icons.error_outline,
-                label: 'Sin Stock',
-                value: '${stats.outOfStockCount}',
-                color: Colors.red,
-              ),
-            ],
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final invWidth = constraints.maxWidth;
+              final invCardWidth = (invWidth - 16) / 2;
+              final invCardHeight = invCardWidth / 1.5;
+              const minInvCardHeight = 138.0;
+              return GridView.count(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                crossAxisCount: 2,
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 16,
+                childAspectRatio:
+                    invCardWidth /
+                    (invCardHeight < minInvCardHeight
+                        ? minInvCardHeight
+                        : invCardHeight),
+                children: [
+                  _InventoryCard(
+                    icon: Icons.inventory_2,
+                    label: 'Total Productos',
+                    value: '${stats.totalProducts}',
+                    color: Colors.blue,
+                  ),
+                  _InventoryCard(
+                    icon: Icons.warehouse,
+                    label: 'Stock Total',
+                    value: '${stats.totalStock}',
+                    color: Colors.green,
+                  ),
+                  _InventoryCard(
+                    icon: Icons.warning_amber,
+                    label: 'Stock Bajo',
+                    value: '${stats.lowStockCount}',
+                    color: Colors.orange,
+                  ),
+                  _InventoryCard(
+                    icon: Icons.error_outline,
+                    label: 'Sin Stock',
+                    value: '${stats.outOfStockCount}',
+                    color: Colors.red,
+                  ),
+                ],
+              );
+            },
           ),
         ],
       ),
@@ -293,16 +304,20 @@ class _MonthPicker extends StatelessWidget {
       children: [
         const Icon(Icons.calendar_month, size: 18, color: Colors.grey),
         const SizedBox(width: 8),
-        DropdownButton<String>(
-          value: period,
-          underline: const SizedBox(),
-          style: AppTextStyles.labelLarge.copyWith(fontSize: 14),
-          items: months.map((m) {
-            final key = 'month:${m.year}-${m.month.toString().padLeft(2, '0')}';
-            final label = DateFormat('MMMM yyyy', 'es').format(m);
-            return DropdownMenuItem(value: key, child: Text(label));
-          }).toList(),
-          onChanged: (v) => v != null ? onChanged(v) : null,
+        Flexible(
+          child: DropdownButton<String>(
+            value: period,
+            isExpanded: true,
+            underline: const SizedBox(),
+            style: AppTextStyles.labelLarge.copyWith(fontSize: 14),
+            items: months.map((m) {
+              final key =
+                  'month:${m.year}-${m.month.toString().padLeft(2, '0')}';
+              final label = DateFormat('MMMM yyyy', 'es').format(m);
+              return DropdownMenuItem(value: key, child: Text(label));
+            }).toList(),
+            onChanged: (v) => v != null ? onChanged(v) : null,
+          ),
         ),
       ],
     );
@@ -604,7 +619,7 @@ class _KPICard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         gradient: gradient,
         borderRadius: BorderRadius.circular(16),
@@ -618,38 +633,47 @@ class _KPICard extends StatelessWidget {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(7),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(icon, color: Colors.white, size: 24),
+                child: Icon(icon, color: Colors.white, size: 22),
               ),
               if (subtitle != null)
-                Text(
-                  subtitle!,
-                  style: const TextStyle(color: Colors.white70, fontSize: 12),
+                Flexible(
+                  child: Text(
+                    subtitle!,
+                    style: const TextStyle(color: Colors.white70, fontSize: 11),
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
             ],
           ),
-          const Spacer(),
-          Text(
-            value,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
+          const SizedBox(height: 6),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              value,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 2),
           Text(
             label,
-            style: const TextStyle(color: Colors.white70, fontSize: 12),
+            style: const TextStyle(color: Colors.white70, fontSize: 11),
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
@@ -673,7 +697,7 @@ class _InventoryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -681,26 +705,35 @@ class _InventoryCard extends StatelessWidget {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(7),
             decoration: BoxDecoration(
               color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(icon, color: color, size: 24),
+            child: Icon(icon, color: color, size: 22),
           ),
-          const Spacer(),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: color,
+          const SizedBox(height: 6),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              value,
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
             ),
           ),
-          const SizedBox(height: 4),
-          Text(label, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+            overflow: TextOverflow.ellipsis,
+          ),
         ],
       ),
     );
@@ -749,9 +782,19 @@ class _SalesVsReturnsChart extends StatelessWidget {
                   touchTooltipData: BarTouchTooltipData(
                     getTooltipColor: (_) => Colors.black87,
                     getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                      final idx = group.x.toInt();
                       final label = rodIndex == 0 ? 'Ventas' : 'Reimb.';
+                      DateTime? date;
+                      if (idx >= 0 && idx < sales.length) {
+                        date = sales[idx].date;
+                      } else if (idx >= 0 && idx < returns.length) {
+                        date = returns[idx].date;
+                      }
+                      final dateText = date != null
+                          ? DateFormat('dd/MM', 'es').format(date)
+                          : '--/--';
                       return BarTooltipItem(
-                        '$label\n${rod.toY.toStringAsFixed(2)} €',
+                        '$dateText\n$label: ${rod.toY.toStringAsFixed(2)} €',
                         const TextStyle(
                           color: Colors.white,
                           fontSize: 12,
@@ -867,7 +910,7 @@ class _ReturnsDonutChart extends StatelessWidget {
           Text(
             total == 0
                 ? 'Sin devoluciones este mes'
-                : '$total en el último mes',
+                : '$total devoluciones totales',
             style: TextStyle(fontSize: 12, color: Colors.grey[600]),
           ),
           const SizedBox(height: 12),
@@ -1160,7 +1203,9 @@ class _AdminProductsScreenState extends ConsumerState<AdminProductsScreen> {
                                           ),
                                         ),
                                         const SizedBox(height: 4),
-                                        Row(
+                                        Wrap(
+                                          spacing: 8,
+                                          runSpacing: 4,
                                           children: [
                                             Container(
                                               padding:
@@ -1278,8 +1323,12 @@ class _AdminProductsScreenState extends ConsumerState<AdminProductsScreen> {
                                         color: Colors.grey,
                                       ),
                                     ),
-                                    const Spacer(),
-                                    _buildSizeStockIndicators(productSizes),
+                                    const SizedBox(width: 8),
+                                    Flexible(
+                                      child: _buildSizeStockIndicators(
+                                        productSizes,
+                                      ),
+                                    ),
                                   ],
                                 ),
                               ],

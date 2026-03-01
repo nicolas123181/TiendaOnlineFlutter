@@ -144,6 +144,9 @@ class _AddToCartButtonState extends ConsumerState<AddToCartButton>
               child: Text(
                 '${widget.product.name} añadido al carrito',
                 style: AppTextStyles.bodyMedium.copyWith(color: Colors.white),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                softWrap: false,
               ),
             ),
             IconButton(

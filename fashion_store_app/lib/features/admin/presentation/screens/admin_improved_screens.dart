@@ -925,9 +925,12 @@ class _AdminOrdersScreenImprovedState
           child: Icon(icon, size: 16, color: color),
         ),
         const SizedBox(width: 8),
-        Text(
-          title,
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+        Flexible(
+          child: Text(
+            title,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            overflow: TextOverflow.ellipsis,
+          ),
         ),
         const SizedBox(width: 6),
         Text(
@@ -1050,11 +1053,12 @@ class _AdminOrdersScreenImprovedState
                   ),
                 ),
                 const SizedBox(width: 8),
-                _buildStatusBadge(status),
-                const Spacer(),
+                Flexible(child: _buildStatusBadge(status)),
+                const SizedBox(width: 8),
                 Text(
                   DateFormat('d MMM, HH:mm', 'es').format(createdAt),
                   style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
@@ -1170,21 +1174,23 @@ class _AdminOrdersScreenImprovedState
             // Bottom row: total + action button
             Row(
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '${total.toStringAsFixed(2)} \u20AC',
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
+                Flexible(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${total.toStringAsFixed(2)} \u20AC',
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                    ),
-                    Text(
-                      '${items.length} producto(s)',
-                      style: TextStyle(fontSize: 12, color: Colors.grey[500]),
-                    ),
-                  ],
+                      Text(
+                        '${items.length} producto(s)',
+                        style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                      ),
+                    ],
+                  ),
                 ),
                 const Spacer(),
                 // ACTION BUTTONS
@@ -1304,7 +1310,7 @@ class _AdminOrdersScreenImprovedState
               ),
             ),
             const SizedBox(width: 8),
-            _buildStatusBadge(status),
+            Flexible(child: _buildStatusBadge(status)),
           ],
         ),
         subtitle: Column(
@@ -1427,15 +1433,18 @@ class _AdminOrdersScreenImprovedState
 
     setState(() => _isProcessing = true);
     try {
-      await ref
+      final emailSent = await ref
           .read(orderActionsProvider)
           .updateOrderStatus(orderId: orderId, newStatus: newStatus);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Pedido actualizado: ${actionLabels[newStatus] ?? newStatus}',
+              emailSent
+                  ? 'Pedido actualizado: ${actionLabels[newStatus] ?? newStatus} ✓ Email enviado'
+                  : 'Pedido actualizado (sin email - API web no disponible)',
             ),
+            backgroundColor: emailSent ? Colors.green : Colors.orange,
           ),
         );
       }
@@ -1485,7 +1494,9 @@ class _AdminOrdersScreenImprovedState
             children: [
               Icon(Icons.local_shipping, color: Colors.orange[700]),
               const SizedBox(width: 12),
-              const Text('Datos de Envío'),
+              const Flexible(
+                child: Text('Datos de Envío', overflow: TextOverflow.ellipsis),
+              ),
             ],
           ),
           content: SingleChildScrollView(
@@ -1575,7 +1586,7 @@ class _AdminOrdersScreenImprovedState
 
     setState(() => _isProcessing = true);
     try {
-      await ref
+      final emailSent = await ref
           .read(orderActionsProvider)
           .updateOrderStatus(
             orderId: orderId,
@@ -1585,10 +1596,13 @@ class _AdminOrdersScreenImprovedState
           );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text(
-              'Pedido enviado. Email con tracking enviado al cliente.',
+              emailSent
+                  ? 'Pedido enviado ✓ Email con tracking enviado al cliente'
+                  : 'Pedido enviado (sin email - API web no disponible)',
             ),
+            backgroundColor: emailSent ? Colors.green : Colors.orange,
           ),
         );
       }

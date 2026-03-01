@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -11,7 +10,7 @@ import '../../data/models/invoice_model.dart';
 
 /// Provider para obtener factura por orden.
 /// Si no existe, la crea directamente en Supabase.
-final invoiceByOrderProvider = FutureProvider.family<Invoice?, int>((
+final invoiceByOrderProvider = FutureProvider.autoDispose.family<Invoice?, int>((
   ref,
   orderId,
 ) async {
@@ -19,20 +18,55 @@ final invoiceByOrderProvider = FutureProvider.family<Invoice?, int>((
 
   debugPrint('🧾 Buscando factura para order_id: $orderId');
 
-  // 1. Intentar obtener la factura existente
-  var response = await supabase
-      .from('invoices')
-      .select('*, invoice_items(*)')
-      .eq('order_id', orderId)
-      .maybeSingle();
+  // ──────────────────────────────────────────────
+  // 1. Buscar facturas existentes para este pedido
+  // ──────────────────────────────────────────────
+  try {
+    final invoicesResponse = await supabase
+        .from('invoices')
+        .select('*')
+        .eq('order_id', orderId)
+        .order('created_at', ascending: false);
 
-  if (response != null) {
-    debugPrint('🧾 Factura encontrada en BD');
-    return Invoice.fromJson(response);
+    final invoices = List<Map<String, dynamic>>.from(invoicesResponse);
+
+    if (invoices.isNotEmpty) {
+      // Priorizar factura rectificativa si existe
+      Map<String, dynamic>? selectedInvoice;
+      for (final inv in invoices) {
+        final invType = inv['type'] as String?;
+        final total = (inv['total'] as num?)?.toInt() ?? 0;
+        if (invType == 'credit_note' || total < 0) {
+          selectedInvoice = inv;
+          break;
+        }
+      }
+      selectedInvoice ??= invoices.first;
+
+      debugPrint(
+        '🧾 Factura encontrada: id=${selectedInvoice['id']}, type=${selectedInvoice['type'] ?? 'standard'}',
+      );
+
+      // Intentar con items, fallback sin items
+      try {
+        final withItems = await supabase
+            .from('invoices')
+            .select('*, invoice_items(*)')
+            .eq('id', selectedInvoice['id'])
+            .single();
+        return Invoice.fromJson(withItems);
+      } catch (_) {
+        return Invoice.fromJson(selectedInvoice);
+      }
+    }
+  } catch (e) {
+    debugPrint('🧾 Error buscando facturas: $e');
   }
 
-  // 2. No existe → obtener datos del pedido para crearla
-  debugPrint('🧾 No existe factura, creando directamente en Supabase...');
+  // ──────────────────────────────────────────────
+  // 2. No existe → crear factura estándar
+  // ──────────────────────────────────────────────
+  debugPrint('🧾 No existe factura, creando para pedido #$orderId...');
   try {
     final orderRes = await supabase
         .from('orders')
@@ -81,67 +115,95 @@ final invoiceByOrderProvider = FutureProvider.family<Invoice?, int>((
     final taxAmount = subtotalConDescuento - baseImponible;
     final total = subtotalConDescuento + shippingCost;
 
-    // Insertar factura
-    final invoiceInsert = await supabase
-        .from('invoices')
-        .insert({
-          'invoice_number': invoiceNumber,
-          'order_id': orderId,
-          'customer_name': orderRes['customer_name'] ?? 'Cliente',
-          'customer_email': orderRes['customer_email'] ?? '',
-          'customer_address': orderRes['customer_address'],
-          'customer_city': orderRes['customer_city'],
-          'customer_postal_code': orderRes['customer_postal_code'],
-          'customer_phone': orderRes['customer_phone'],
-          'company_name': 'Vantage Fashion S.L.',
-          'company_address': 'Calle de la Moda 123, 28001 Madrid, España',
-          'company_nif': 'B-12345678',
-          'company_email': 'facturas@vantage.com',
-          'company_phone': '+34 900 123 456',
-          'subtotal': subtotal,
-          'shipping_cost': shippingCost,
-          'discount': discount,
-          'tax_rate': taxRate,
-          'tax_amount': taxAmount,
-          'total': total,
-          'payment_method': 'Tarjeta de crédito',
-          'payment_status': 'paid',
-          'status': 'issued',
-          'type': 'standard',
-        })
-        .select()
-        .single();
+    // Insertar factura — intentar con columna 'type', si falla reintentar sin ella
+    final invoiceRecord = <String, dynamic>{
+      'invoice_number': invoiceNumber,
+      'order_id': orderId,
+      'customer_name': orderRes['customer_name'] ?? 'Cliente',
+      'customer_email': orderRes['customer_email'] ?? '',
+      'customer_address': orderRes['customer_address'],
+      'customer_city': orderRes['customer_city'],
+      'customer_postal_code': orderRes['customer_postal_code'],
+      'customer_phone': orderRes['customer_phone'],
+      'company_name': 'Vantage Fashion S.L.',
+      'company_address': 'Calle de la Moda 123, 28001 Madrid, España',
+      'company_nif': 'B-12345678',
+      'company_email': 'facturas@vantage.com',
+      'company_phone': '+34 900 123 456',
+      'subtotal': subtotal,
+      'shipping_cost': shippingCost,
+      'discount': discount,
+      'tax_rate': taxRate,
+      'tax_amount': taxAmount,
+      'total': total,
+      'payment_method': 'Tarjeta de crédito',
+      'payment_status': 'paid',
+      'status': 'issued',
+      'type': 'standard',
+    };
+
+    Map<String, dynamic> invoiceInsert;
+    try {
+      invoiceInsert = await supabase
+          .from('invoices')
+          .insert(invoiceRecord)
+          .select()
+          .single();
+    } catch (e) {
+      // Si falla por la columna 'type' que puede no existir
+      if (e.toString().contains('column') ||
+          e.toString().contains('42703') ||
+          e.toString().contains('type')) {
+        invoiceRecord.remove('type');
+        invoiceRecord['invoice_number'] =
+            'VNT-${DateTime.now().year}-${DateTime.now().millisecondsSinceEpoch.toString().substring(6)}';
+        invoiceInsert = await supabase
+            .from('invoices')
+            .insert(invoiceRecord)
+            .select()
+            .single();
+      } else {
+        rethrow;
+      }
+    }
 
     final invoiceId = (invoiceInsert['id'] as num).toInt();
     debugPrint('🧾 Factura creada con id: $invoiceId');
 
     // Insertar líneas de factura
     if (items.isNotEmpty) {
-      final invoiceItems = items.map((item) {
-        final unitPrice = (item['product_price'] as num?)?.toInt() ?? 0;
-        final qty = (item['quantity'] as num?)?.toInt() ?? 1;
-        return <String, dynamic>{
-          'invoice_id': invoiceId,
-          'product_id': item['product_id'],
-          'product_name': item['product_name'] ?? 'Producto',
-          'product_size': item['size'],
-          'quantity': qty,
-          'unit_price': unitPrice,
-          'line_total': unitPrice * qty,
-        };
-      }).toList();
+      try {
+        final invoiceItems = items.map((item) {
+          final unitPrice = (item['product_price'] as num?)?.toInt() ?? 0;
+          final qty = (item['quantity'] as num?)?.toInt() ?? 1;
+          return <String, dynamic>{
+            'invoice_id': invoiceId,
+            'product_id': item['product_id'],
+            'product_name': item['product_name'] ?? 'Producto',
+            'product_size': item['size'],
+            'quantity': qty,
+            'unit_price': unitPrice,
+            'line_total': unitPrice * qty,
+          };
+        }).toList();
 
-      await supabase.from('invoice_items').insert(invoiceItems);
+        await supabase.from('invoice_items').insert(invoiceItems);
+      } catch (e) {
+        debugPrint('🧾 Error insertando invoice_items: $e');
+      }
     }
 
-    // Re-leer la factura completa con sus items
-    response = await supabase
-        .from('invoices')
-        .select('*, invoice_items(*)')
-        .eq('id', invoiceId)
-        .single();
-
-    return Invoice.fromJson(response);
+    // Re-leer la factura completa con items (fallback sin items)
+    try {
+      final response = await supabase
+          .from('invoices')
+          .select('*, invoice_items(*)')
+          .eq('id', invoiceId)
+          .single();
+      return Invoice.fromJson(response);
+    } catch (_) {
+      return Invoice.fromJson(invoiceInsert);
+    }
   } catch (e) {
     debugPrint('🧾 Error creando factura: $e');
     return null;
@@ -218,13 +280,16 @@ class InvoiceScreen extends ConsumerWidget {
           ),
         ),
         data: (invoice) => invoice == null
-            ? _buildNoInvoice()
+            ? _buildNoInvoice(
+                onRefresh: () =>
+                    ref.invalidate(invoiceByOrderProvider(orderId)),
+              )
             : _buildInvoiceContent(context, invoice),
       ),
     );
   }
 
-  Widget _buildNoInvoice() {
+  Widget _buildNoInvoice({required VoidCallback onRefresh}) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -241,6 +306,12 @@ class InvoiceScreen extends ConsumerWidget {
             'La factura se generará cuando se confirme el pago.',
             style: AppTextStyles.bodySmall,
             textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 16),
+          OutlinedButton.icon(
+            onPressed: onRefresh,
+            icon: const Icon(Icons.refresh),
+            label: const Text('Actualizar'),
           ),
         ],
       ),
@@ -316,12 +387,13 @@ class InvoiceScreen extends ConsumerWidget {
           colors: [_InvoiceColors.navy, _InvoiceColors.navyLight],
         ),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isNarrow = constraints.maxWidth < 420;
+
+          return Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            runSpacing: 14,
             children: [
               Text(
                 'VANTAGE',
@@ -329,35 +401,42 @@ class InvoiceScreen extends ConsumerWidget {
                   color: _InvoiceColors.gold,
                   letterSpacing: 4,
                   fontWeight: FontWeight.w300,
-                  fontSize: 26,
+                  fontSize: isNarrow ? 24 : 26,
+                ),
+              ),
+              ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: isNarrow ? constraints.maxWidth : 280,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      invoice.type == 'credit_note'
+                          ? 'FACTURA RECTIFICATIVA'
+                          : 'FACTURA',
+                      textAlign: TextAlign.right,
+                      style: AppTextStyles.h2.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w300,
+                        fontSize: isNarrow ? 24 : 28,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      invoice.invoiceNumber,
+                      textAlign: TextAlign.right,
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: Colors.white.withValues(alpha: 0.8),
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                invoice.type == 'credit_note'
-                    ? 'FACTURA RECTIFICATIVA'
-                    : 'FACTURA',
-                style: AppTextStyles.h2.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w300,
-                  fontSize: 28,
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                invoice.invoiceNumber,
-                style: AppTextStyles.bodyMedium.copyWith(
-                  color: Colors.white.withValues(alpha: 0.8),
-                  fontSize: 16,
-                ),
-              ),
-            ],
-          ),
-        ],
+          );
+        },
       ),
     );
   }
@@ -365,67 +444,88 @@ class InvoiceScreen extends ConsumerWidget {
   Widget _buildPartyInfo(Invoice invoice) {
     return Padding(
       padding: const EdgeInsets.all(28),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Cliente (Facturar a)
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('FACTURAR A', style: _InvoiceTextStyles.label),
-                const SizedBox(height: 16),
-                Text(
-                  invoice.customerName ?? 'Cliente #${invoice.orderId}',
-                  style: _InvoiceTextStyles.bodyBold,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isNarrow = constraints.maxWidth < 520;
+
+          return Flex(
+            direction: isNarrow ? Axis.vertical : Axis.horizontal,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                flex: isNarrow ? 0 : 1,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('FACTURAR A', style: _InvoiceTextStyles.label),
+                    const SizedBox(height: 16),
+                    Text(
+                      invoice.customerName ?? 'Cliente #${invoice.orderId}',
+                      style: _InvoiceTextStyles.bodyBold,
+                    ),
+                    if (invoice.customerAddress != null)
+                      Text(
+                        invoice.customerAddress!,
+                        style: _InvoiceTextStyles.body,
+                      ),
+                    if (invoice.customerPostalCode != null ||
+                        invoice.customerCity != null)
+                      Text(
+                        '${invoice.customerPostalCode ?? ''} ${invoice.customerCity ?? ''}'
+                            .trim(),
+                        style: _InvoiceTextStyles.body,
+                      ),
+                    Text(
+                      invoice.customerEmail ?? '',
+                      style: _InvoiceTextStyles.body,
+                    ),
+                    if (invoice.customerPhone != null)
+                      Text(
+                        invoice.customerPhone!,
+                        style: _InvoiceTextStyles.body,
+                      ),
+                  ],
                 ),
-                if (invoice.customerAddress != null)
-                  Text(
-                    invoice.customerAddress!,
-                    style: _InvoiceTextStyles.body,
-                  ),
-                if (invoice.customerPostalCode != null ||
-                    invoice.customerCity != null)
-                  Text(
-                    '${invoice.customerPostalCode ?? ''} ${invoice.customerCity ?? ''}'
-                        .trim(),
-                    style: _InvoiceTextStyles.body,
-                  ),
-                Text(
-                  invoice.customerEmail ?? '',
-                  style: _InvoiceTextStyles.body,
+              ),
+              SizedBox(width: isNarrow ? 0 : 28, height: isNarrow ? 24 : 0),
+              Expanded(
+                flex: isNarrow ? 0 : 1,
+                child: Column(
+                  crossAxisAlignment: isNarrow
+                      ? CrossAxisAlignment.start
+                      : CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      'DATOS DE LA EMPRESA',
+                      style: _InvoiceTextStyles.label,
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'VANTAGE Fashion S.L.',
+                      style: _InvoiceTextStyles.bodyBold,
+                    ),
+                    const Text(
+                      'Calle Principal 123',
+                      style: _InvoiceTextStyles.body,
+                    ),
+                    const Text(
+                      'NIF: B12345678',
+                      style: _InvoiceTextStyles.body,
+                    ),
+                    const Text(
+                      'facturas@vantage.com',
+                      style: _InvoiceTextStyles.body,
+                    ),
+                    const Text(
+                      '+34 900 123 456',
+                      style: _InvoiceTextStyles.body,
+                    ),
+                  ],
                 ),
-                if (invoice.customerPhone != null)
-                  Text(invoice.customerPhone!, style: _InvoiceTextStyles.body),
-              ],
-            ),
-          ),
-          const SizedBox(width: 28),
-          // Empresa (Datos de la empresa)
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text('DATOS DE LA EMPRESA', style: _InvoiceTextStyles.label),
-                const SizedBox(height: 16),
-                const Text(
-                  'VANTAGE Fashion S.L.',
-                  style: _InvoiceTextStyles.bodyBold,
-                ),
-                const Text(
-                  'Calle Principal 123',
-                  style: _InvoiceTextStyles.body,
-                ),
-                const Text('NIF: B12345678', style: _InvoiceTextStyles.body),
-                const Text(
-                  'facturas@vantage.com',
-                  style: _InvoiceTextStyles.body,
-                ),
-                const Text('+34 900 123 456', style: _InvoiceTextStyles.body),
-              ],
-            ),
-          ),
-        ],
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -504,106 +604,120 @@ class InvoiceScreen extends ConsumerWidget {
   Widget _buildItemsTable(Invoice invoice) {
     return Padding(
       padding: const EdgeInsets.all(28),
-      child: Column(
-        children: [
-          // Header Tabla
-          Container(
-            color: _InvoiceColors.navy,
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-            child: Row(
-              children: [
-                Expanded(
-                  flex: 3,
-                  child: Text(
-                    'DESCRIPCIÓN',
-                    style: _InvoiceTextStyles.tableHeader,
-                  ),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minWidth: 560),
+          child: Column(
+            children: [
+              // Header Tabla
+              Container(
+                color: _InvoiceColors.navy,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 18,
+                  vertical: 16,
                 ),
-                Expanded(
-                  child: Text(
-                    'CANTIDAD',
-                    style: _InvoiceTextStyles.tableHeader,
-                    textAlign: TextAlign.center,
-                  ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      flex: 3,
+                      child: Text(
+                        'DESCRIPCIÓN',
+                        style: _InvoiceTextStyles.tableHeader,
+                      ),
+                    ),
+                    Expanded(
+                      child: Text(
+                        'CANTIDAD',
+                        style: _InvoiceTextStyles.tableHeader,
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                    Expanded(
+                      child: Text(
+                        'PRECIO UNIT.',
+                        style: _InvoiceTextStyles.tableHeader,
+                        textAlign: TextAlign.right,
+                      ),
+                    ),
+                    Expanded(
+                      child: Text(
+                        'TOTAL',
+                        style: _InvoiceTextStyles.tableHeader,
+                        textAlign: TextAlign.right,
+                      ),
+                    ),
+                  ],
                 ),
-                Expanded(
-                  child: Text(
-                    'PRECIO UNIT.',
-                    style: _InvoiceTextStyles.tableHeader,
-                    textAlign: TextAlign.right,
-                  ),
-                ),
-                Expanded(
-                  child: Text(
-                    'TOTAL',
-                    style: _InvoiceTextStyles.tableHeader,
-                    textAlign: TextAlign.right,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          // Items
-          ...invoice.items.map(
-            (item) => Container(
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-              decoration: const BoxDecoration(
-                border: Border(bottom: BorderSide(color: Color(0xFFE5E7EB))),
               ),
-              child: Row(
-                children: [
-                  Expanded(
-                    flex: 3,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          item.productName,
+              // Items
+              ...invoice.items.map(
+                (item) => Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 18,
+                    vertical: 16,
+                  ),
+                  decoration: const BoxDecoration(
+                    border: Border(
+                      bottom: BorderSide(color: Color(0xFFE5E7EB)),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        flex: 3,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              item.productName,
+                              style: const TextStyle(
+                                color: _InvoiceColors.navy,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            if (item.productSize != null)
+                              Text(
+                                'Talla: ${item.productSize}',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Color(0xFF6B7280),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                      Expanded(
+                        child: Text(
+                          '${item.quantity}',
+                          style: const TextStyle(color: Color(0xFF4A4A4A)),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                      Expanded(
+                        child: Text(
+                          item.formattedUnitPrice,
+                          style: const TextStyle(color: Color(0xFF4A4A4A)),
+                          textAlign: TextAlign.right,
+                        ),
+                      ),
+                      Expanded(
+                        child: Text(
+                          item.formattedTotal,
                           style: const TextStyle(
                             color: _InvoiceColors.navy,
-                            fontWeight: FontWeight.w500,
+                            fontWeight: FontWeight.w600,
                           ),
+                          textAlign: TextAlign.right,
                         ),
-                        if (item.productSize != null)
-                          Text(
-                            'Talla: ${item.productSize}',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: Color(0xFF6B7280),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                  Expanded(
-                    child: Text(
-                      '${item.quantity}',
-                      style: const TextStyle(color: Color(0xFF4A4A4A)),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                  Expanded(
-                    child: Text(
-                      item.formattedUnitPrice,
-                      style: const TextStyle(color: Color(0xFF4A4A4A)),
-                      textAlign: TextAlign.right,
-                    ),
-                  ),
-                  Expanded(
-                    child: Text(
-                      item.formattedTotal,
-                      style: const TextStyle(
-                        color: _InvoiceColors.navy,
-                        fontWeight: FontWeight.w600,
                       ),
-                      textAlign: TextAlign.right,
-                    ),
+                    ],
                   ),
-                ],
+                ),
               ),
-            ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -731,8 +845,14 @@ class InvoiceScreen extends ConsumerWidget {
 
   Future<void> _downloadPdf(String url) async {
     final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
+    try {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (_) {
+      try {
+        await launchUrl(uri);
+      } catch (_) {
+        debugPrint('🧾 No se pudo abrir el PDF: $url');
+      }
     }
   }
 }

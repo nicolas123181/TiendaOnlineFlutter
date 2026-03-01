@@ -458,11 +458,22 @@ class _InvoiceCardComplete extends StatelessWidget {
                           invoice.pdfUrl ??
                           '${AppConstants.webApiBaseUrl}/api/invoice/${invoice.id}/pdf?download=true';
                       final uri = Uri.parse(url);
-                      if (await canLaunchUrl(uri)) {
+                      try {
                         await launchUrl(
                           uri,
                           mode: LaunchMode.externalApplication,
                         );
+                      } catch (_) {
+                        // Fallback: intentar modo por defecto del sistema
+                        try {
+                          await launchUrl(uri);
+                        } catch (_) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('No se pudo abrir: $url')),
+                            );
+                          }
+                        }
                       }
                     },
                   ),
@@ -755,16 +766,23 @@ class AdminReturnsScreenComplete extends ConsumerWidget {
                             (r) => _PendingReturnCard(
                               returnModel: r,
                               onMarkReceived: () async {
-                                await ref
+                                final emailSent = await ref
                                     .read(returnActionsProvider)
                                     .markAsReceived(r.id);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                      'Devolución marcada como recibida',
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        emailSent
+                                            ? 'Devolución marcada como recibida ✓ Email enviado'
+                                            : 'Devolución marcada como recibida (sin email)',
+                                      ),
+                                      backgroundColor: emailSent
+                                          ? Colors.green
+                                          : Colors.orange,
                                     ),
-                                  ),
-                                );
+                                  );
+                                }
                               },
                             ),
                           )
@@ -792,13 +810,20 @@ class AdminReturnsScreenComplete extends ConsumerWidget {
                             (r) => _ReceivedReturnCard(
                               returnModel: r,
                               onProcessRefund: () async {
-                                await ref
+                                final emailSent = await ref
                                     .read(returnActionsProvider)
                                     .processRefund(returnId: r.id);
                                 if (context.mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Reembolso procesado'),
+                                    SnackBar(
+                                      content: Text(
+                                        emailSent
+                                            ? 'Reembolso procesado ✓ Email enviado'
+                                            : 'Estado actualizado (sin reembolso Stripe ni email)',
+                                      ),
+                                      backgroundColor: emailSent
+                                          ? Colors.green
+                                          : Colors.orange,
                                     ),
                                   );
                                 }
@@ -875,13 +900,20 @@ class AdminReturnsScreenComplete extends ConsumerWidget {
                 );
                 return;
               }
-              await ref
+              final emailSent = await ref
                   .read(returnActionsProvider)
                   .rejectReturn(returnId: r.id, reason: controller.text);
               if (context.mounted) {
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Devolución rechazada')),
+                  SnackBar(
+                    content: Text(
+                      emailSent
+                          ? 'Devolución rechazada ✓ Email enviado'
+                          : 'Devolución rechazada (sin email)',
+                    ),
+                    backgroundColor: emailSent ? Colors.green : Colors.orange,
+                  ),
                 );
               }
             },
@@ -960,7 +992,13 @@ class _SectionHeader extends StatelessWidget {
           child: Icon(icon, color: color, size: 22),
         ),
         const SizedBox(width: 12),
-        Text(title, style: AppTextStyles.h4),
+        Flexible(
+          child: Text(
+            title,
+            style: AppTextStyles.h4,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
       ],
     );
   }
@@ -1060,17 +1098,30 @@ class _PendingReturnCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  '${returnModel.refundAmountInEuros.toStringAsFixed(2)} €',
-                  style: AppTextStyles.h4.copyWith(color: AppColors.primary),
+                Flexible(
+                  child: Text(
+                    '${returnModel.refundAmountInEuros.toStringAsFixed(2)} €',
+                    style: AppTextStyles.h4.copyWith(color: AppColors.primary),
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
-                ElevatedButton.icon(
-                  onPressed: onMarkReceived,
-                  icon: const Icon(Icons.inbox, size: 18),
-                  label: const Text('Marcar Recibido'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.purple,
-                    foregroundColor: Colors.white,
+                const SizedBox(width: 8),
+                Flexible(
+                  child: ElevatedButton.icon(
+                    onPressed: onMarkReceived,
+                    icon: const Icon(Icons.inbox, size: 18),
+                    label: const Text(
+                      'Marcar Recibido',
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.purple,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                    ),
                   ),
                 ),
               ],
@@ -1136,24 +1187,41 @@ class _ReceivedReturnCard extends StatelessWidget {
             const SizedBox(height: 12),
             Row(
               children: [
-                Text(
-                  '${returnModel.refundAmountInEuros.toStringAsFixed(2)} €',
-                  style: AppTextStyles.h4.copyWith(color: AppColors.primary),
+                Flexible(
+                  child: Text(
+                    '${returnModel.refundAmountInEuros.toStringAsFixed(2)} €',
+                    style: AppTextStyles.h4.copyWith(color: AppColors.primary),
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
                 const Spacer(),
                 TextButton(
                   onPressed: onReject,
-                  style: TextButton.styleFrom(foregroundColor: Colors.red),
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.red,
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
                   child: const Text('Rechazar'),
                 ),
-                const SizedBox(width: 8),
-                ElevatedButton.icon(
-                  onPressed: onProcessRefund,
-                  icon: const Icon(Icons.check, size: 18),
-                  label: const Text('Procesar Reembolso'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    foregroundColor: Colors.white,
+                const SizedBox(width: 4),
+                Flexible(
+                  child: ElevatedButton.icon(
+                    onPressed: onProcessRefund,
+                    icon: const Icon(Icons.check, size: 18),
+                    label: const Text(
+                      'Reembolso',
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                    ),
                   ),
                 ),
               ],
@@ -1349,7 +1417,13 @@ class _AdminNewsletterScreenCompleteState
                       children: [
                         Icon(Icons.edit, color: Colors.blue[600]),
                         const SizedBox(width: 8),
-                        Text('Redactar Newsletter', style: AppTextStyles.h4),
+                        Flexible(
+                          child: Text(
+                            'Redactar Newsletter',
+                            style: AppTextStyles.h4,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 20),
@@ -1790,16 +1864,17 @@ class _AdminSettingsScreenCompleteState
                           ),
                         ),
                         const SizedBox(width: 16),
-                        Text(
-                          'Información del Sistema',
-                          style: AppTextStyles.h4,
+                        Flexible(
+                          child: Text(
+                            'Información del Sistema',
+                            style: AppTextStyles.h4,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 20),
                     _InfoRow('Versión de la App', '1.0.0'),
-                    _InfoRow('API Base URL', AppConstants.webApiBaseUrl),
-                    _InfoRow('Cloudinary', AppConstants.cloudinaryCloudName),
                   ],
                 ),
               ),
@@ -1824,8 +1899,18 @@ class _InfoRow extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: TextStyle(color: Colors.grey[600])),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.w500)),
+          Flexible(
+            child: Text(label, style: TextStyle(color: Colors.grey[600])),
+          ),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(
+              value,
+              style: const TextStyle(fontWeight: FontWeight.w500),
+              textAlign: TextAlign.end,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
         ],
       ),
     );
@@ -1877,6 +1962,7 @@ class AdminLowStockAlertsScreen extends ConsumerWidget {
                   TextButton(
                     onPressed: () {
                       // Navegar a configuración para cambiar umbral
+                      context.go('/admin/settings');
                     },
                     child: const Text('Cambiar'),
                   ),
@@ -1993,11 +2079,14 @@ class _AlertSection extends StatelessWidget {
             children: [
               Icon(icon, color: color, size: 20),
               const SizedBox(width: 8),
-              Text(
-                title,
-                style: TextStyle(fontWeight: FontWeight.bold, color: color),
+              Flexible(
+                child: Text(
+                  title,
+                  style: TextStyle(fontWeight: FontWeight.bold, color: color),
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
-              const Spacer(),
+              const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(

@@ -33,19 +33,24 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = ref.watch(themeModeProvider) == ThemeMode.dark;
+    final canUseThemeAsLeading =
+        showThemeToggle && leading == null && !Navigator.of(context).canPop();
+
+    final themeToggleButton = IconButton(
+      icon: Icon(isDark ? Icons.light_mode : Icons.dark_mode),
+      onPressed: () => ref.read(themeModeProvider.notifier).toggleTheme(),
+      tooltip: isDark ? 'Modo claro' : 'Modo oscuro',
+    );
 
     return AppBar(
       title: Text(title),
       centerTitle: centerTitle,
-      leading: leading,
+      leadingWidth: kToolbarHeight,
+      actionsPadding: const EdgeInsets.only(right: 4),
+      leading: canUseThemeAsLeading ? themeToggleButton : leading,
       actions: [
         // Botón de modo oscuro
-        if (showThemeToggle)
-          IconButton(
-            icon: Icon(isDark ? Icons.light_mode : Icons.dark_mode),
-            onPressed: () => ref.read(themeModeProvider.notifier).toggleTheme(),
-            tooltip: isDark ? 'Modo claro' : 'Modo oscuro',
-          ),
+        if (showThemeToggle && !canUseThemeAsLeading) themeToggleButton,
 
         // Botón de búsqueda
         if (showSearch)
@@ -73,8 +78,6 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
 
         // Acciones adicionales
         if (additionalActions != null) ...additionalActions!,
-
-        const SizedBox(width: 8),
       ],
     );
   }

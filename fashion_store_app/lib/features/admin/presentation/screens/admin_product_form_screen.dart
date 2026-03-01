@@ -479,6 +479,7 @@ class _AdminProductFormScreenState
                                 Positioned(
                                   bottom: 0,
                                   left: 0,
+                                  right: 0,
                                   child: GestureDetector(
                                     onTap: () =>
                                         _setPrimaryFromUrl(entry.value),
@@ -507,13 +508,16 @@ class _AdminProductFormScreenState
                                             color: Colors.white,
                                           ),
                                           const SizedBox(width: 4),
-                                          Text(
-                                            isPrimary
-                                                ? 'Principal'
-                                                : 'Hacer principal',
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 10,
+                                          Flexible(
+                                            child: Text(
+                                              isPrimary
+                                                  ? 'Principal'
+                                                  : 'Hacer principal',
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 10,
+                                              ),
+                                              overflow: TextOverflow.ellipsis,
                                             ),
                                           ),
                                         ],
@@ -553,6 +557,7 @@ class _AdminProductFormScreenState
                                 Positioned(
                                   bottom: 0,
                                   left: 0,
+                                  right: 0,
                                   child: GestureDetector(
                                     onTap: () =>
                                         _setPrimaryFromPending(entry.value),
@@ -581,13 +586,16 @@ class _AdminProductFormScreenState
                                             color: Colors.white,
                                           ),
                                           const SizedBox(width: 4),
-                                          Text(
-                                            isPrimary
-                                                ? 'Principal'
-                                                : 'Hacer principal',
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 10,
+                                          Flexible(
+                                            child: Text(
+                                              isPrimary
+                                                  ? 'Principal'
+                                                  : 'Hacer principal',
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 10,
+                                              ),
+                                              overflow: TextOverflow.ellipsis,
                                             ),
                                           ),
                                         ],
@@ -768,15 +776,18 @@ class _AdminProductFormScreenState
             // Botones
             Row(
               children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: _isLoading ? null : () => Navigator.pop(context),
-                    child: const Text('Cancelar'),
+                OutlinedButton(
+                  onPressed: _isLoading ? null : () => Navigator.pop(context),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 14,
+                    ),
                   ),
+                  child: const Text('Cancelar'),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
-                  flex: 2,
                   child: ElevatedButton(
                     onPressed: _isLoading ? null : _saveProduct,
                     child: Text(
