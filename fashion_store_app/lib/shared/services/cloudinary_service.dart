@@ -29,13 +29,11 @@ class CloudinaryService {
     Function(double)? onProgress,
   }) async {
     try {
-      final timestamp = (DateTime.now().millisecondsSinceEpoch ~/ 1000).toString();
+      final timestamp = (DateTime.now().millisecondsSinceEpoch ~/ 1000)
+          .toString();
 
       // Parámetros que se firman (deben coincidir exactamente con los enviados)
-      final signParams = {
-        'folder': folder,
-        'timestamp': timestamp,
-      };
+      final signParams = {'folder': folder, 'timestamp': timestamp};
 
       final signature = _generateSignature(signParams);
 

@@ -70,8 +70,7 @@ class AppConstants {
   static String get cloudinaryCloudName =>
       dotenv.env['CLOUDINARY_CLOUD_NAME'] ?? '';
 
-  static String get cloudinaryApiKey =>
-      dotenv.env['CLOUDINARY_API_KEY'] ?? '';
+  static String get cloudinaryApiKey => dotenv.env['CLOUDINARY_API_KEY'] ?? '';
 
   static String get cloudinaryApiSecret =>
       dotenv.env['CLOUDINARY_API_SECRET'] ?? '';
